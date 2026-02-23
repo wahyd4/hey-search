@@ -80,6 +80,7 @@ function App() {
           timestamp: new Date().toISOString(),
           total_results: 0,
           has_next: false,
+          cached: false,
         });
       } finally {
         setLoading(false);
