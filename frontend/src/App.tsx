@@ -300,6 +300,7 @@ function App() {
                   errors={response.errors}
                   page={page}
                   totalResults={response.results.length}
+                  cached={response.cached}
                   initialCollapsed
                 />
               </div>
@@ -347,6 +348,7 @@ function App() {
                       errors={response.errors}
                       page={page}
                       totalResults={response.results.length}
+                      cached={response.cached}
                     />
                   </div>
                 </aside>

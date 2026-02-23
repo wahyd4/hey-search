@@ -61,6 +61,7 @@ class SearchResponse(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     total_results: int = 0
     has_next: bool = True
+    cached: bool = False
 
 
 class EngineInfo(BaseModel):

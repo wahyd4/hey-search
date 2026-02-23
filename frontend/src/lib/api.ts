@@ -48,6 +48,7 @@ export interface SearchResponse {
   timestamp: string;
   total_results: number;
   has_next: boolean;
+  cached: boolean;
 }
 
 export interface EngineInfo {

@@ -65,9 +65,10 @@ async def search(
     engines_key = ",".join(sorted(engines)) if engines else ""
 
     # Check cache first
-    cached = await cache.get_cached(query, category, page, image_size, engines_key)
-    if cached is not None:
-        resp = SearchResponse(**cached)
+    cached_data = await cache.get_cached(query, category, page, image_size, engines_key)
+    if cached_data is not None:
+        resp = SearchResponse(**cached_data)
+        resp.cached = True
         return resp
 
     enabled_engines = registry.get_enabled_engines()

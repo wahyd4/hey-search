@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Clock, Database } from "lucide-react";
 import type { EngineStat, EngineError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -8,10 +8,11 @@ interface SearchStatsProps {
   errors: EngineError[];
   page: number;
   totalResults: number;
+  cached?: boolean;
   initialCollapsed?: boolean;
 }
 
-export function SearchStats({ stats, page, totalResults, initialCollapsed = false }: SearchStatsProps) {
+export function SearchStats({ stats, page, totalResults, cached = false, initialCollapsed = false }: SearchStatsProps) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
 
   if (stats.length === 0) return null;
@@ -32,6 +33,12 @@ export function SearchStats({ stats, page, totalResults, initialCollapsed = fals
           Search Stats
         </span>
         <span className="flex items-center gap-2">
+          {cached && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+              <Database className="h-3 w-3" aria-hidden="true" />
+              cached
+            </span>
+          )}
           <span className="text-xs text-muted-foreground">
             {totalResults} result{totalResults !== 1 && "s"} · page {page}
           </span>
