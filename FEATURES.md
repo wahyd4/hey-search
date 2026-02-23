@@ -36,6 +36,14 @@
 - **Error reporting** — when an upstream engine fails or times out, the UI shows a toast notification identifying which engine had issues
 - **Graceful degradation** — partial failures don't block results from other engines
 
+## Caching
+
+- **Redis cache** — identical searches served from Redis cache to reduce upstream load and latency
+- **Configurable TTL** — cache duration adjustable from 0 (disabled) to 168 hours (1 week); default 6 hours
+- **UI controls** — preset buttons + slider in Settings → Cache tab, with flush button
+- **Optional** — when `REDIS_URL` is not set or Redis is unreachable, caching is silently disabled
+- **Deterministic keys** — cache key derived from query + category + page + image_size + engines
+
 ## UI / UX
 
 - **Mobile-first** responsive design built with React, Tailwind CSS, and shadcn theming

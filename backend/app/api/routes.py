@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Literal
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models import SearchResponse, EngineInfo, APIError
 from app.search import search, get_autocomplete
 from app.engines import registry
 from app.excluded import get_excluded_domains, add_excluded_domain, remove_excluded_domain
+from app.settings import get_all_settings, get_setting, set_setting
+from app.cache import is_cache_available, flush_cache
 
 router = APIRouter()
 
@@ -227,3 +229,83 @@ async def api_remove_excluded_domain(domain: str):
             content=APIError(code="not_found", message=f"Domain '{domain}' not in exclusion list").model_dump(),
         )
     return ExcludedDomainsResponse(domains=get_excluded_domains())
+
+
+# --- Settings ---
+
+class SettingsResponse(BaseModel):
+    cache_ttl_hours: float = Field(description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
+    cache_available: bool = Field(description="Whether Redis is connected and available")
+
+
+class UpdateSettingsRequest(BaseModel):
+    cache_ttl_hours: float = Field(ge=0, le=168, description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
+
+
+@router.get(
+    "/settings",
+    response_model=SettingsResponse,
+    summary="Get application settings",
+    description="""Returns current application settings including cache TTL.
+
+**Example:**
+```bash
+curl '$BASE_URL/api/settings'
+```
+""",
+    tags=["Settings"],
+)
+async def api_get_settings():
+    settings = get_all_settings()
+    return SettingsResponse(
+        cache_ttl_hours=float(settings.get("cache_ttl_hours", "6")),
+        cache_available=is_cache_available(),
+    )
+
+
+@router.put(
+    "/settings",
+    response_model=SettingsResponse,
+    summary="Update application settings",
+    description="""Update settings such as cache TTL. Set `cache_ttl_hours` to 0 to disable caching.
+
+**Example:**
+```bash
+curl -X PUT '$BASE_URL/api/settings' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"cache_ttl_hours": 12}'
+```
+""",
+    tags=["Settings"],
+)
+async def api_update_settings(body: UpdateSettingsRequest):
+    set_setting("cache_ttl_hours", str(body.cache_ttl_hours))
+    return SettingsResponse(
+        cache_ttl_hours=body.cache_ttl_hours,
+        cache_available=is_cache_available(),
+    )
+
+
+# --- Cache Management ---
+
+class CacheFlushResponse(BaseModel):
+    keys_deleted: int
+    message: str
+
+
+@router.delete(
+    "/cache",
+    response_model=CacheFlushResponse,
+    summary="Flush the search cache",
+    description="""Delete all cached search results from Redis.
+
+**Example:**
+```bash
+curl -X DELETE '$BASE_URL/api/cache'
+```
+""",
+    tags=["Settings"],
+)
+async def api_flush_cache():
+    count = await flush_cache()
+    return CacheFlushResponse(keys_deleted=count, message=f"Deleted {count} cached entries")

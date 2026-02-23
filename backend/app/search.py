@@ -12,6 +12,7 @@ from app.models import WebResult, ImageResult, EngineError, EngineStat, SearchRe
 from app.engines.base import SearchEngine, SearchCategory
 from app.engines import registry
 from app.excluded import is_url_excluded
+from app import cache
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,15 @@ async def search(
     engines: list[str] | None = None,
     image_size: str = "",
 ) -> SearchResponse:
-    """Search across all enabled engines concurrently."""
+    """Search across all enabled engines concurrently, with optional Redis caching."""
+    engines_key = ",".join(sorted(engines)) if engines else ""
+
+    # Check cache first
+    cached = await cache.get_cached(query, category, page, image_size, engines_key)
+    if cached is not None:
+        resp = SearchResponse(**cached)
+        return resp
+
     enabled_engines = registry.get_enabled_engines()
 
     if engines:
@@ -118,7 +127,7 @@ async def search(
     for i, r in enumerate(unique_results):
         r.rank = i + 1
 
-    return SearchResponse(
+    response = SearchResponse(
         query=query,
         category=category,
         page=page,
@@ -128,6 +137,12 @@ async def search(
         total_results=len(unique_results),
         has_next=any(s.result_count > 0 for s in all_stats if s.status == "ok"),
     )
+
+    # Store in cache (only if we got results)
+    if unique_results:
+        await cache.set_cached(query, category, page, image_size, engines_key, response.model_dump())
+
+    return response
 
 
 async def get_autocomplete(query: str) -> list[str]:

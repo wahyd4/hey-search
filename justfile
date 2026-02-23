@@ -24,6 +24,7 @@ dev:
     #!/usr/bin/env bash
     set -e
     trap 'echo "Shutting down..."; kill 0; wait' INT TERM
+    export REDIS_URL="${REDIS_URL:-}"
     cd backend && uv run uvicorn app.main:app --reload --port 8000 &
     cd frontend && npm run dev &
     wait

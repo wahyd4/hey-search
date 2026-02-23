@@ -139,3 +139,32 @@ export async function removeExcludedDomain(domain: string): Promise<string[]> {
   const data: ExcludedDomainsResponse = await resp.json();
   return data.domains;
 }
+
+// --- Settings ---
+
+export interface AppSettings {
+  cache_ttl_hours: number;
+  cache_available: boolean;
+}
+
+export async function getSettings(): Promise<AppSettings> {
+  const resp = await fetch(`${API_BASE}/settings`);
+  if (!resp.ok) throw new Error("Failed to fetch settings");
+  return resp.json();
+}
+
+export async function updateSettings(settings: { cache_ttl_hours: number }): Promise<AppSettings> {
+  const resp = await fetch(`${API_BASE}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  if (!resp.ok) throw new Error("Failed to update settings");
+  return resp.json();
+}
+
+export async function flushCache(): Promise<{ keys_deleted: number; message: string }> {
+  const resp = await fetch(`${API_BASE}/cache`, { method: "DELETE" });
+  if (!resp.ok) throw new Error("Failed to flush cache");
+  return resp.json();
+}

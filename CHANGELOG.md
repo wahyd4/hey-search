@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+
+- **Redis search cache** — identical searches within a configurable time window are served from Redis cache instead of re-querying upstream engines
+  - Cache TTL configurable via UI (Settings → Cache tab) from 0 hours (disabled) to 1 week
+  - Default TTL: 6 hours
+  - TTL setting persisted in SQLite
+  - Cache key is deterministic hash of query + category + page + image_size + engines
+  - Only successful results (with at least 1 result) are cached
+- **Cache management UI** — new "Cache" tab in Settings modal
+  - Redis connection status indicator (green dot = connected)
+  - Preset buttons: Disabled, 1h, 6h, 12h, 24h, 3 days, 1 week
+  - Continuous slider for fine-grained TTL control
+  - "Clear all cached results" flush button
+- **Settings API** — `GET/PUT /api/settings` for cache_ttl_hours, `DELETE /api/cache` for flushing
+- Redis is optional — when `REDIS_URL` is not set or Redis is unreachable, caching is silently disabled
+
 ## 1.4.0
 
 ### Added

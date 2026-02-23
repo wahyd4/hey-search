@@ -1,10 +1,11 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { Settings, ToggleLeft, ToggleRight, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Settings, ToggleLeft, ToggleRight, Plus, Trash2, ExternalLink, Database } from "lucide-react";
 import { getEngines, toggleEngine, type EngineInfo } from "@/lib/api";
 import { getExcludedDomains, addExcludedDomain, removeExcludedDomain } from "@/lib/api";
+import { getSettings, updateSettings, flushCache, type AppSettings } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-type Tab = "engines" | "excluded";
+type Tab = "engines" | "excluded" | "cache";
 
 interface SettingsModalProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
           {([
             { key: "engines" as const, label: "Engines" },
             { key: "excluded" as const, label: "Excluded Sites" },
+            { key: "cache" as const, label: "Cache" },
           ]).map(({ key, label }) => (
             <button
               key={key}
@@ -67,6 +69,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {tab === "engines" && <EnginesTab />}
           {tab === "excluded" && <ExcludedTab />}
+          {tab === "cache" && <CacheTab />}
         </div>
 
         {/* Footer */}
@@ -220,6 +223,140 @@ function ExcludedTab() {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/* ── Cache tab ──────────────────────────────────────────── */
+
+const TTL_PRESETS = [
+  { label: "Disabled", hours: 0 },
+  { label: "1 hour", hours: 1 },
+  { label: "6 hours", hours: 6 },
+  { label: "12 hours", hours: 12 },
+  { label: "24 hours", hours: 24 },
+  { label: "3 days", hours: 72 },
+  { label: "1 week", hours: 168 },
+];
+
+function CacheTab() {
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [flushing, setFlushing] = useState(false);
+  const [flushMsg, setFlushMsg] = useState("");
+  const [ttl, setTtl] = useState(6);
+
+  useEffect(() => {
+    getSettings()
+      .then((s) => {
+        setSettings(s);
+        setTtl(s.cache_ttl_hours);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async (hours: number) => {
+    setTtl(hours);
+    setSaving(true);
+    try {
+      const updated = await updateSettings({ cache_ttl_hours: hours });
+      setSettings(updated);
+    } catch (err) {
+      console.error("Failed to update cache TTL:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleFlush = async () => {
+    setFlushing(true);
+    setFlushMsg("");
+    try {
+      const result = await flushCache();
+      setFlushMsg(result.message);
+    } catch {
+      setFlushMsg("Failed to flush cache");
+    } finally {
+      setFlushing(false);
+    }
+  };
+
+  if (loading) return <p className="py-4 text-center text-muted-foreground">Loading…</p>;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Database className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm font-medium">Redis Cache</p>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3">
+          {settings?.cache_available
+            ? "Redis is connected. Repeated searches are served from cache."
+            : "Redis is not configured. Set REDIS_URL to enable caching."}
+        </p>
+        <div className={cn("rounded-lg border p-1 inline-flex items-center", !settings?.cache_available && "opacity-50 pointer-events-none")}>
+          <span className={cn(
+            "inline-block h-2 w-2 rounded-full mr-2 ml-1",
+            settings?.cache_available ? "bg-green-500" : "bg-muted-foreground"
+          )} />
+          <span className="text-xs text-muted-foreground mr-2">{settings?.cache_available ? "Connected" : "Disconnected"}</span>
+        </div>
+      </div>
+
+      {/* TTL selection */}
+      <div>
+        <label className="text-sm font-medium block mb-2">Cache duration</label>
+        <div className="flex flex-wrap gap-2">
+          {TTL_PRESETS.map((preset) => (
+            <button
+              key={preset.hours}
+              onClick={() => handleSave(preset.hours)}
+              disabled={saving || !settings?.cache_available}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40",
+                ttl === preset.hours
+                  ? "bg-primary text-primary-foreground"
+                  : "border text-muted-foreground hover:bg-accent"
+              )}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        {/* Custom slider */}
+        <div className="mt-3 flex items-center gap-3">
+          <input
+            type="range"
+            min={0}
+            max={168}
+            step={1}
+            value={ttl}
+            disabled={!settings?.cache_available}
+            onChange={(e) => setTtl(Number(e.target.value))}
+            onMouseUp={() => handleSave(ttl)}
+            onTouchEnd={() => handleSave(ttl)}
+            className="flex-1 accent-primary disabled:opacity-40"
+            aria-label="Cache TTL hours"
+          />
+          <span className="w-20 text-right text-sm tabular-nums text-muted-foreground">
+            {ttl === 0 ? "Off" : ttl < 24 ? `${ttl}h` : `${(ttl / 24).toFixed(1)}d`}
+          </span>
+        </div>
+      </div>
+
+      {/* Flush button */}
+      <div className="border-t pt-4">
+        <button
+          onClick={handleFlush}
+          disabled={flushing || !settings?.cache_available}
+          className="rounded-lg border border-destructive/50 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {flushing ? "Flushing…" : "Clear all cached results"}
+        </button>
+        {flushMsg && <p className="mt-2 text-xs text-muted-foreground">{flushMsg}</p>}
+      </div>
     </div>
   );
 }

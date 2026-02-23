@@ -11,4 +11,5 @@ dependencies = [
     "tenacity",
     "lxml",
     "beautifulsoup4",
+    "redis>=5.0",
 ]

@@ -15,6 +15,7 @@ Inspired by [SearXNG](https://github.com/searxng/searxng).
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - [Node.js](https://nodejs.org/) >= 18
 - Python >= 3.12
+- [Redis](https://redis.io/) (optional — enables search result caching)
 
 ## Running Locally
 
@@ -24,6 +25,12 @@ Inspired by [SearXNG](https://github.com/searxng/searxng).
 cd backend
 uv sync                # install dependencies
 uv run uvicorn app.main:app --reload --port 8000
+```
+
+To enable Redis caching:
+
+```bash
+REDIS_URL=redis://192.168.1.2:6399 uv run uvicorn app.main:app --reload --port 8000
 ```
 
 The API will be available at `http://localhost:8000`. Interactive docs:
@@ -41,11 +48,26 @@ npm run dev            # start dev server with hot reload
 
 The frontend dev server runs at `http://localhost:5173` and proxies `/api` requests to the backend.
 
-### 3. Docker (production)
+### 3. Quick start (both)
+
+```bash
+# Without Redis (caching disabled)
+just dev
+
+# With Redis
+REDIS_URL=redis://192.168.1.2:6399 just dev
+```
+
+### 4. Docker (production)
 
 ```bash
 docker build -t hey-search .
+
+# Without Redis
 docker run -p 8000:8000 hey-search
+
+# With Redis
+docker run -p 8000:8000 -e REDIS_URL=redis://your-redis:6379 hey-search
 ```
 
 Then open http://localhost:8000.
@@ -58,6 +80,9 @@ Then open http://localhost:8000.
 | GET    | `/api/autocomplete?q=`      | Autocomplete suggestions    |
 | GET    | `/api/engines`              | List all search engines     |
 | PUT    | `/api/engines/{name}`       | Enable/disable an engine    |
+| GET    | `/api/settings`             | Get app settings (cache TTL)|
+| PUT    | `/api/settings`             | Update settings             |
+| DELETE | `/api/cache`                | Flush search cache          |
 
 ## Features
 
