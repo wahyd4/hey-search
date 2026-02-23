@@ -73,16 +73,6 @@ function App() {
     getBookmarkedUrls().then(setBookmarkedUrls).catch(() => {});
   }, []);
 
-  // On iOS, rubber-band overscroll reveals the <html> background behind the page.
-  // Set it to black when the home page has an active background image so overscroll
-  // zones show black instead of white. Cleared on teardown or when leaving home.
-  const isHomeWithBg = !hasSearched && !!(bgInfo?.enabled && bgInfo?.url);
-  useEffect(() => {
-    const el = document.documentElement;
-    el.style.backgroundColor = isHomeWithBg ? "#000" : "";
-    return () => { el.style.backgroundColor = ""; };
-  }, [isHomeWithBg]);
-
   const doSearch = useCallback(
     async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true) => {
       if (!q.trim()) return;
@@ -262,7 +252,7 @@ function App() {
   // Home page (no search yet)
   if (!hasSearched) {
     return (
-      <div className="relative flex min-h-dvh flex-col">
+      <div className="relative flex min-h-screen flex-col">
         {/* Background image */}
         {bgUrl && (
           <div
