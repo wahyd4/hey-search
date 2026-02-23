@@ -10,7 +10,6 @@ from fastapi import FastAPI, Request
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.engines import registry
@@ -124,24 +123,13 @@ app.include_router(router, prefix="/api")
 # Serve frontend static files if they exist (production / Docker)
 static_dir = Path(__file__).resolve().parent.parent / "static"
 if static_dir.is_dir():
-    # Catch-all SPA fallback: serve index.html for any non-API, non-asset path.
-    # This must be registered BEFORE the static mount so /backgrounds, /bookmarks,
-    # /stats etc. return 200 + index.html instead of 404.
     from fastapi.responses import FileResponse as _FileResponse
-    import re as _re
-
-    _ASSET_RE = _re.compile(r"\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|map|json|webmanifest)$", _re.I)
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_fallback(full_path: str):
-        # Let actual static asset requests fall through to the mount below
-        if _ASSET_RE.search(full_path):
-            from starlette.responses import Response
-            return Response(status_code=404)
-        index = static_dir / "index.html"
-        if index.is_file():
-            return _FileResponse(str(index))
-        from starlette.responses import Response
-        return Response(status_code=404)
-
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+        # Serve the actual file if it exists (assets, favicon, etc.)
+        candidate = (static_dir / full_path).resolve()
+        if candidate.is_file() and candidate.is_relative_to(static_dir):
+            return _FileResponse(str(candidate))
+        # Fall back to index.html for all SPA routes
+        return _FileResponse(str(static_dir / "index.html"))
