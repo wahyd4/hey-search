@@ -226,14 +226,25 @@ function App() {
   const imageResults = response?.results.filter((r): r is ImageResult => isImageResult(r)) ?? [];
   const hasResults = (response?.results.length ?? 0) > 0;
 
+  // SettingsModal is always rendered here so it works on every page
+  const settingsModal = (
+    <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+  );
+
   // Gallery page
   if (showGallery) {
-    return <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} />;
+    return <>
+      <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} />
+      {settingsModal}
+    </>;
   }
 
   // Bookmarks page
   if (showBookmarks) {
-    return <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} />;
+    return <>
+      <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} />
+      {settingsModal}
+    </>;
   }
 
   const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
@@ -259,6 +270,7 @@ function App() {
           onShowBookmarks={handleShowBookmarks}
           onShowGallery={handleShowGallery}
           transparent={!!bgUrl}
+          hideLogo
         />
 
         {/* Center content */}
@@ -336,7 +348,7 @@ function App() {
           </a>
         )}
 
-        <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+        {settingsModal}
       </div>
     );
   }
@@ -512,7 +524,7 @@ function App() {
       {response?.errors && <ErrorToast errors={response.errors} />}
 
       {/* Settings modal */}
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      {settingsModal}
     </div>
   );
 }

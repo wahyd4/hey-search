@@ -7,30 +7,51 @@ interface AppHeaderProps {
   onShowSettings: () => void;
   onShowBookmarks: () => void;
   onShowGallery: () => void;
-  /** Makes header transparent + white text (for home page with background image) */
+  /** Hides the logo button (used on the home page) */
+  hideLogo?: boolean;
+  /** Transparent header overlay (home page with background image) */
   transparent?: boolean;
   /** Optional center content (e.g. search bar) */
   children?: React.ReactNode;
 }
+
+// Items ordered left→right. Rightmost item (Settings) gets the shortest delay,
+// so it appears first creating the right-to-left unfold effect.
+const NAV_ITEMS = [
+  { id: "docs",        icon: ExternalLink, label: "API Docs",    href: "/docs" },
+  { id: "gallery",     icon: Images,       label: "Backgrounds", href: null },
+  { id: "bookmarks",   icon: BookmarkIcon, label: "Bookmarks",   href: null },
+  { id: "settings",    icon: Settings,     label: "Settings",    href: null },
+] as const;
+
+const STAGGER_MS = 60;
 
 export function AppHeader({
   onGoHome,
   onShowSettings,
   onShowBookmarks,
   onShowGallery,
+  hideLogo = false,
   transparent = false,
   children,
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
+  const close = () => setMenuOpen(false);
+
+  const actions: Record<string, () => void> = {
+    settings:  () => { onShowSettings();  close(); },
+    bookmarks: () => { onShowBookmarks(); close(); },
+    gallery:   () => { onShowGallery();   close(); },
+    docs:      close,
+  };
+
+  // Close on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) close();
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -39,94 +60,123 @@ export function AppHeader({
   // Close on Escape
   useEffect(() => {
     if (!menuOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [menuOpen]);
 
-  const base = transparent
+  const headerBase = transparent
     ? "border-transparent bg-transparent"
     : "border-b bg-background/95 backdrop-blur";
 
-  const iconCls = transparent
-    ? "text-white/80 hover:text-white hover:bg-white/10"
-    : "text-muted-foreground hover:bg-accent";
+  const btnBase = cn(
+    "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+    transparent
+      ? "text-white/80 hover:text-white hover:bg-white/10"
+      : "text-muted-foreground hover:bg-accent"
+  );
 
-  const logoCls = transparent
-    ? "text-white font-bold"
-    : "bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-bold";
-
-  const dropdownCls = "absolute right-0 top-full mt-2 w-48 rounded-xl border bg-popover shadow-lg z-50 overflow-hidden";
-
-  const menuItem = (
-    icon: React.ReactNode,
-    label: string,
-    action: () => void,
-    isLink?: boolean,
-    href?: string,
-  ) => {
-    const cls = "flex w-full items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-accent transition-colors focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
-    if (isLink && href) {
-      return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className={cls} onClick={() => setMenuOpen(false)}>
-          {icon}
-          {label}
-        </a>
-      );
-    }
-    return (
-      <button className={cls} onClick={() => { action(); setMenuOpen(false); }}>
-        {icon}
-        {label}
-      </button>
-    );
-  };
+  const itemBase = cn(
+    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap",
+    "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+    transparent
+      ? "text-white/80 hover:text-white hover:bg-white/10"
+      : "text-muted-foreground hover:bg-accent"
+  );
 
   return (
-    <header className={cn("sticky top-0 z-40 border", base)}>
-      <div className="flex items-center gap-3 px-4 py-3">
-        {/* Logo */}
-        <button
-          onClick={onGoHome}
-          aria-label="Go to homepage"
-          className={cn("shrink-0 text-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded", logoCls)}
-        >
-          HS
-        </button>
+    <header className={cn("sticky top-0 z-40 border", headerBase)}>
+      <div className="flex items-center gap-2 px-4 py-3">
+        {/* Logo — hidden on home page */}
+        {!hideLogo && (
+          <button
+            onClick={onGoHome}
+            aria-label="Go to homepage"
+            className="shrink-0 text-xl font-bold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+          >
+            HS
+          </button>
+        )}
 
         {/* Center slot */}
-        {children && <div className="flex-1 min-w-0">{children}</div>}
+        {children
+          ? <div className="flex-1 min-w-0">{children}</div>
+          : <div className="flex-1" />
+        }
 
-        {/* Spacer when no center content */}
-        {!children && <div className="flex-1" />}
+        {/* Right side: animated nav items + toggle button */}
+        <div ref={menuRef} className="flex items-center gap-1 shrink-0">
+          {/* Nav items — animate right→left on open */}
+          {NAV_ITEMS.map((item, i) => {
+            // Rightmost item (Settings, index 3) gets 0ms delay → appears first
+            const delay = menuOpen
+              ? (NAV_ITEMS.length - 1 - i) * STAGGER_MS
+              : 0;
 
-        {/* Menu button */}
-        <div className="relative shrink-0" ref={menuRef}>
+            const sharedStyle: React.CSSProperties = {
+              transitionProperty: "opacity, transform",
+              transitionDuration: "180ms",
+              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+              transitionDelay: `${delay}ms`,
+              opacity: menuOpen ? 1 : 0,
+              transform: menuOpen ? "translateX(0)" : "translateX(16px)",
+              pointerEvents: menuOpen ? "auto" : "none",
+            };
+
+            const Icon = item.icon;
+
+            if (item.href) {
+              return (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={item.label}
+                  title={item.label}
+                  className={itemBase}
+                  style={sharedStyle}
+                  onClick={close}
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{item.label}</span>
+                </a>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                onClick={actions[item.id]}
+                aria-label={item.label}
+                title={item.label}
+                className={itemBase}
+                style={sharedStyle}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">{item.label}</span>
+              </button>
+            );
+          })}
+
+          {/* Toggle button */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            className={cn(
-              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              iconCls
-            )}
+            aria-haspopup="true"
+            className={btnBase}
           >
-            {menuOpen
-              ? <X className="h-5 w-5" aria-hidden="true" />
-              : <Menu className="h-5 w-5" aria-hidden="true" />
-            }
+            <span
+              className="block transition-transform duration-200"
+              style={{ transform: menuOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+            >
+              {menuOpen
+                ? <X className="h-5 w-5" aria-hidden="true" />
+                : <Menu className="h-5 w-5" aria-hidden="true" />
+              }
+            </span>
           </button>
-
-          {menuOpen && (
-            <div className={dropdownCls} role="menu" aria-label="Site navigation">
-              {menuItem(<Settings className="h-4 w-4" />, "Settings", onShowSettings)}
-              {menuItem(<BookmarkIcon className="h-4 w-4" />, "Bookmarks", onShowBookmarks)}
-              {menuItem(<Images className="h-4 w-4" />, "Backgrounds", onShowGallery)}
-              <div className="mx-3 border-t" />
-              {menuItem(<ExternalLink className="h-4 w-4" />, "API Docs", () => {}, true, "/docs")}
-            </div>
-          )}
         </div>
       </div>
     </header>
