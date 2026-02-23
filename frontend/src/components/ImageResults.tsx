@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, type MouseEvent } from "react";
+import { useState, useEffect, useCallback, useRef, type MouseEvent } from "react";
 import type { ImageResult } from "@/lib/api";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
-function formatSize(w: number, h: number): string | null {
-  if (w > 0 && h > 0) return `${w}×${h}`;
-  return null;
+function formatSize(w: number, h: number): string {
+  return `${w} × ${h}`;
 }
 
 interface ImageResultsProps {
@@ -13,8 +12,47 @@ interface ImageResultsProps {
 
 export function ImageResults({ results }: ImageResultsProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  // Track detected dimensions per result index
+  const [dims, setDims] = useState<Record<number, { w: number; h: number }>>({});
+  // Track full-size image dimensions detected in lightbox
+  const [fullDims, setFullDims] = useState<Record<number, { w: number; h: number }>>({});
 
   const selected = selectedIndex !== null ? results[selectedIndex] : null;
+
+  // Reset dims when results change
+  const prevResultsRef = useRef(results);
+  useEffect(() => {
+    if (prevResultsRef.current !== results) {
+      setDims({});
+      setFullDims({});
+      prevResultsRef.current = results;
+    }
+  }, [results]);
+
+  const handleThumbLoad = (i: number, el: HTMLImageElement) => {
+    // Prefer backend-reported dimensions, fallback to natural size of thumbnail
+    const r = results[i];
+    if (r.width > 0 && r.height > 0) {
+      setDims((prev) => ({ ...prev, [i]: { w: r.width, h: r.height } }));
+    } else if (el.naturalWidth > 0 && el.naturalHeight > 0) {
+      setDims((prev) => ({ ...prev, [i]: { w: el.naturalWidth, h: el.naturalHeight } }));
+    }
+  };
+
+  const handleFullLoad = (el: HTMLImageElement) => {
+    if (selectedIndex !== null && el.naturalWidth > 0 && el.naturalHeight > 0) {
+      setFullDims((prev) => ({ ...prev, [selectedIndex]: { w: el.naturalWidth, h: el.naturalHeight } }));
+    }
+  };
+
+  // Best known size for an image: full-size > backend > thumbnail
+  const getSize = (i: number): { w: number; h: number } | null => {
+    if (fullDims[i]) return fullDims[i];
+    const r = results[i];
+    if (r.width > 0 && r.height > 0) return { w: r.width, h: r.height };
+    if (dims[i]) return dims[i];
+    return null;
+  };
 
   const goPrev = useCallback(() => {
     setSelectedIndex((i) => (i !== null && i > 0 ? i - 1 : i));
@@ -67,20 +105,21 @@ export function ImageResults({ results }: ImageResultsProps) {
               loading="lazy"
               referrerPolicy="no-referrer"
               className="w-full object-cover transition-transform group-hover:scale-[1.03]"
+              onLoad={(e) => handleThumbLoad(i, e.target as HTMLImageElement)}
               onError={(e) => {
                 const el = e.target as HTMLImageElement;
                 el.src =
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect fill='%23eee' width='200' height='150'/%3E%3Ctext x='100' y='80' text-anchor='middle' fill='%23999' font-size='12'%3ENo image%3C/text%3E%3C/svg%3E";
               }}
             />
-            {/* Hover overlay with title */}
+            {/* Hover overlay with title + size */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
               <p className="truncate text-xs text-white">{img.title}</p>
               <div className="flex items-center gap-1">
                 <p className="truncate text-[10px] text-white/60">{img.source}</p>
-                {formatSize(img.width, img.height) && (
+                {getSize(i) && (
                   <span className="ml-auto shrink-0 text-[10px] tabular-nums text-white/60">
-                    {formatSize(img.width, img.height)}
+                    {formatSize(getSize(i)!.w, getSize(i)!.h)}
                   </span>
                 )}
               </div>
@@ -134,13 +173,14 @@ export function ImageResults({ results }: ImageResultsProps) {
               alt={selected.title}
               referrerPolicy="no-referrer"
               className="max-h-[70vh] w-auto rounded object-contain"
+              onLoad={(e) => handleFullLoad(e.target as HTMLImageElement)}
             />
             <div className="mt-3">
               <h3 className="font-medium">{selected.title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Source: {selected.source} • Engine: {selected.engine}
-                {formatSize(selected.width, selected.height) && (
-                  <> • {formatSize(selected.width, selected.height)}px</>
+                {getSize(selectedIndex) && (
+                  <> • {formatSize(getSize(selectedIndex)!.w, getSize(selectedIndex)!.h)}</>
                 )}
                 <span className="ml-2 tabular-nums opacity-60">
                   {selectedIndex + 1} / {results.length}
