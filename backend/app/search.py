@@ -8,7 +8,7 @@ import logging
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import httpx
 
-from app.models import WebResult, ImageResult, EngineError, SearchResponse
+from app.models import WebResult, ImageResult, EngineError, EngineStat, SearchResponse
 from app.engines.base import SearchEngine, SearchCategory
 from app.engines import registry
 from app.excluded import is_url_excluded
@@ -80,14 +80,29 @@ async def search(
     ]
     results_list = await asyncio.gather(*tasks)
 
-    # Aggregate results
+    # Aggregate results and build per-engine stats
     all_results: list[WebResult | ImageResult] = []
     all_errors: list[EngineError] = []
+    all_stats: list[EngineStat] = []
 
-    for engine_results, error in results_list:
+    for engine, (engine_results, error) in zip(enabled_engines, results_list):
         all_results.extend(engine_results)
         if error:
             all_errors.append(error)
+            all_stats.append(EngineStat(
+                engine=engine.name,
+                display_name=engine.display_name,
+                result_count=0,
+                status="timeout" if error.is_timeout else "error",
+                error_message=error.message,
+            ))
+        else:
+            all_stats.append(EngineStat(
+                engine=engine.name,
+                display_name=engine.display_name,
+                result_count=len(engine_results),
+                status="ok",
+            ))
 
     # Deduplicate by URL and filter excluded domains
     seen_urls: set[str] = set()
@@ -100,8 +115,10 @@ async def search(
     return SearchResponse(
         query=query,
         category=category,
+        page=page,
         results=unique_results,
         errors=all_errors,
+        engine_stats=all_stats,
     )
 
 

@@ -30,13 +30,24 @@ class EngineError(BaseModel):
     is_timeout: bool = False
 
 
+class EngineStat(BaseModel):
+    """Per-engine statistics for a single search."""
+    engine: str
+    display_name: str
+    result_count: int
+    status: str = "ok"           # "ok" | "error" | "timeout"
+    error_message: str = ""
+
+
 class SearchResponse(BaseModel):
     """Aggregated search response from all engines."""
     query: str
     category: str = "web"
+    page: int = 1
     results: list[WebResult | ImageResult] = Field(default_factory=list)
     errors: list[EngineError] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
+    engine_stats: list[EngineStat] = Field(default_factory=list)
 
 
 class EngineInfo(BaseModel):

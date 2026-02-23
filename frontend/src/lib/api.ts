@@ -22,12 +22,22 @@ export interface EngineError {
   is_timeout: boolean;
 }
 
+export interface EngineStat {
+  engine: string;
+  display_name: string;
+  result_count: number;
+  status: "ok" | "error" | "timeout";
+  error_message: string;
+}
+
 export interface SearchResponse {
   query: string;
   category: string;
+  page: number;
   results: (WebResult | ImageResult)[];
   errors: EngineError[];
   suggestions: string[];
+  engine_stats: EngineStat[];
 }
 
 export interface EngineInfo {
