@@ -25,7 +25,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={onClose}>
       <div className="fixed inset-0 bg-black/50" />
       <div
-        className="relative z-10 flex w-full max-w-lg flex-col rounded-t-2xl bg-card shadow-2xl sm:rounded-2xl"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl bg-card shadow-2xl sm:max-h-[80vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -64,13 +64,13 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
         </div>
 
         {/* Content */}
-        <div className="max-h-[60vh] overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {tab === "engines" && <EnginesTab />}
           {tab === "excluded" && <ExcludedTab />}
         </div>
 
         {/* Footer */}
-        <div className="border-t px-6 py-3">
+        <div className="shrink-0 border-t px-6 py-3">
           <a
             href="/docs"
             target="_blank"
