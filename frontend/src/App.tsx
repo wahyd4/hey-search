@@ -73,23 +73,14 @@ function App() {
     getBookmarkedUrls().then(setBookmarkedUrls).catch(() => {});
   }, []);
 
-  // On iOS, overscroll (rubber-band) reveals the html/body background.
-  // When the home page has a full-screen background image, force html+body
-  // to black so the overscroll area matches instead of flashing white.
+  // On iOS, rubber-band overscroll reveals the <html> background behind the page.
+  // Set it to black when the home page has an active background image so overscroll
+  // zones show black instead of white. Cleared on teardown or when leaving home.
   const isHomeWithBg = !hasSearched && !!(bgInfo?.enabled && bgInfo?.url);
   useEffect(() => {
     const el = document.documentElement;
-    if (isHomeWithBg) {
-      el.style.backgroundColor = "#000";
-      document.body.style.backgroundColor = "#000";
-    } else {
-      el.style.backgroundColor = "";
-      document.body.style.backgroundColor = "";
-    }
-    return () => {
-      el.style.backgroundColor = "";
-      document.body.style.backgroundColor = "";
-    };
+    el.style.backgroundColor = isHomeWithBg ? "#000" : "";
+    return () => { el.style.backgroundColor = ""; };
   }, [isHomeWithBg]);
 
   const doSearch = useCallback(
@@ -271,11 +262,11 @@ function App() {
   // Home page (no search yet)
   if (!hasSearched) {
     return (
-      <div className={cn("relative flex min-h-dvh flex-col", bgUrl && "bg-black")}>
-        {/* Background image — fixed so it covers the full viewport including iOS overscroll zones */}
+      <div className="relative flex min-h-dvh flex-col">
+        {/* Background image */}
         {bgUrl && (
           <div
-            className="fixed inset-0 -z-10 bg-cover bg-center transition-opacity duration-700"
+            className="absolute inset-0 -z-10 bg-cover bg-center transition-opacity duration-700"
             style={{ backgroundImage: `url(${bgUrl})` }}
           >
             <div className="absolute inset-0 bg-black/40 dark:bg-black/60" />
