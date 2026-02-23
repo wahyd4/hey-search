@@ -1,9 +1,18 @@
 # Changelog
 
+## 1.2.0
+
+### Changed
+
+- **Google engine rewrite** — replaced Startpage proxy with direct Google scraping using SearXNG's async progressive response approach (`asearch=arc`). Parses `MjjYud` containers, extracts URLs from redirect wrappers, and handles base64 thumbnails for image search.
+- **Bing engine rewrite** — added direct Bing scraping with SearXNG-style cookie handling, base64 redirect URL decoding, and CAPTCHA detection. Automatically falls back to Yahoo (Bing-powered) when Bing blocks the request.
+
 ## 1.1.0
 
 ### Added
 
+- **Pagination** — page navigation for web and image results with URL-synced state (`?q=...&page=2`)
+- **Search stats sidebar** — per-engine result counts and status indicators (green/amber/red), collapsible on mobile, sticky sidebar on desktop
 - **Domain exclusion** — exclude specific websites from search results
   - SQLite-backed persistence (`backend/data/hey_search.db`)
   - REST API: `GET/POST /api/excluded-domains`, `DELETE /api/excluded-domains/{domain}`
@@ -13,6 +22,7 @@
 
 - **Unified settings modal** — replaced separate Engines and Excluded Sites buttons with a single Settings button that opens a tabbed modal
 - Added footer on both home and results pages with a link to the interactive API documentation (Swagger UI at `/docs`)
+- URL now reflects search state (query, category, page) and supports browser back/forward
 
 ## 1.0.0 — 2026-02-23
 
