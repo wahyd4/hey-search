@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { listBackgrounds, type BackgroundListItem } from "@/lib/api";
+import { AppHeader } from "@/components/AppHeader";
 
 interface BackgroundGalleryProps {
   onBack: () => void;
+  onShowSettings: () => void;
+  onShowBookmarks: () => void;
 }
 
-export function BackgroundGallery({ onBack }: BackgroundGalleryProps) {
+export function BackgroundGallery({ onBack, onShowSettings, onShowBookmarks }: BackgroundGalleryProps) {
   const [images, setImages] = useState<BackgroundListItem[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -43,22 +46,19 @@ export function BackgroundGallery({ onBack }: BackgroundGalleryProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <button
-            onClick={onBack}
-            aria-label="Go back"
-            className="rounded-full p-2 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="text-lg font-semibold">Background Gallery</h1>
-          <span className="text-sm text-muted-foreground">
-            {images.length} image{images.length !== 1 ? "s" : ""}
+      <AppHeader
+        onGoHome={onBack}
+        onShowSettings={onShowSettings}
+        onShowBookmarks={onShowBookmarks}
+        onShowGallery={() => {}}
+      >
+        <h1 className="text-base font-semibold">
+          Background Gallery
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            ({images.length})
           </span>
-        </div>
-      </header>
+        </h1>
+      </AppHeader>
 
       {/* Image grid */}
       <main className="mx-auto max-w-6xl px-4 py-6">
@@ -141,3 +141,4 @@ export function BackgroundGallery({ onBack }: BackgroundGalleryProps) {
     </div>
   );
 }
+

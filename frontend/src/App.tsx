@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal, RefreshCw, Images, BookmarkIcon } from "lucide-react";
+import { Search, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal, RefreshCw } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
@@ -8,6 +8,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { ErrorToast } from "@/components/ErrorToast";
 import { BackgroundGallery } from "@/components/BackgroundGallery";
 import { Bookmarks } from "@/components/Bookmarks";
+import { AppHeader } from "@/components/AppHeader";
 import { search as apiSearch, isImageResult, getBackground, refreshBackground, getBookmarkedUrls, addBookmark, removeBookmarkByUrl, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -227,12 +228,12 @@ function App() {
 
   // Gallery page
   if (showGallery) {
-    return <BackgroundGallery onBack={handleGoHome} />;
+    return <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} />;
   }
 
   // Bookmarks page
   if (showBookmarks) {
-    return <Bookmarks />;
+    return <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} />;
   }
 
   const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
@@ -240,7 +241,7 @@ function App() {
   // Home page (no search yet)
   if (!hasSearched) {
     return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="relative flex min-h-screen flex-col">
         {/* Background image */}
         {bgUrl && (
           <div
@@ -251,101 +252,61 @@ function App() {
           </div>
         )}
 
-        {/* Top-right: settings + nav menu */}
-        <div className="absolute top-4 right-4 flex items-center gap-1">
-          <button
-            onClick={handleShowBookmarks}
-            aria-label="Bookmarks"
-            title="Bookmarks"
-            className={cn(
-              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              bgUrl ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
-            )}
-          >
-            <BookmarkIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <button
-            onClick={handleShowGallery}
-            aria-label="Background gallery"
-            title="Backgrounds"
-            className={cn(
-              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              bgUrl ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
-            )}
-          >
-            <Images className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <a
-            href="/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="API Docs"
-            title="API Docs"
-            className={cn(
-              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              bgUrl ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
-            )}
-          >
-            <ExternalLink className="h-5 w-5" aria-hidden="true" />
-          </a>
-          <div className={cn("mx-1 h-5 w-px", bgUrl ? "bg-white/20" : "bg-border")} aria-hidden="true" />
-          <button
-            onClick={() => setShowSettings(true)}
-            aria-label="Open settings"
-            title="Settings"
-            className={cn(
-              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              bgUrl ? "text-white/80 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
-            )}
-          >
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </div>
+        {/* Shared header */}
+        <AppHeader
+          onGoHome={handleGoHome}
+          onShowSettings={() => setShowSettings(true)}
+          onShowBookmarks={handleShowBookmarks}
+          onShowGallery={handleShowGallery}
+          transparent={!!bgUrl}
+        />
 
         {/* Center content */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            <span className={cn(
-              "bg-clip-text text-transparent",
-              bgUrl
-                ? "bg-gradient-to-r from-white to-white/90"
-                : "bg-gradient-to-r from-blue-600 to-purple-600"
-            )}>
-              Hey Search
-            </span>
-          </h1>
-          <p className={cn("mt-2", bgUrl ? "text-white/70" : "text-muted-foreground")}>
-            Private metasearch engine
-          </p>
-        </div>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pb-20">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              <span className={cn(
+                "bg-clip-text text-transparent",
+                bgUrl
+                  ? "bg-gradient-to-r from-white to-white/90"
+                  : "bg-gradient-to-r from-blue-600 to-purple-600"
+              )}>
+                Hey Search
+              </span>
+            </h1>
+            <p className={cn("mt-2", bgUrl ? "text-white/70" : "text-muted-foreground")}>
+              Private metasearch engine
+            </p>
+          </div>
 
-        <SearchBar onSearch={(q) => doSearch(q, category)} className="w-full" />
+          <SearchBar onSearch={(q) => doSearch(q, category)} className="w-full" />
 
-        {/* Category switch */}
-        <div className="mt-4 flex items-center gap-2" role="group" aria-label="Search category">
-          {([
-            { key: "web" as const, label: "Web", icon: Globe },
-            { key: "images" as const, label: "Images", icon: ImageIcon },
-          ]).map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setCategory(key)}
-              aria-pressed={category === key}
-              className={cn(
-                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                category === key
-                  ? bgUrl
-                    ? "bg-white/20 text-white border border-white/30"
-                    : "bg-primary text-primary-foreground"
-                  : bgUrl
-                    ? "text-white/60 hover:text-white hover:bg-white/10 border border-transparent"
-                    : "text-muted-foreground hover:bg-accent border border-transparent"
-              )}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {label}
-            </button>
-          ))}
+          {/* Category switch */}
+          <div className="mt-4 flex items-center gap-2" role="group" aria-label="Search category">
+            {([
+              { key: "web" as const, label: "Web", icon: Globe },
+              { key: "images" as const, label: "Images", icon: ImageIcon },
+            ]).map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => setCategory(key)}
+                aria-pressed={category === key}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  category === key
+                    ? bgUrl
+                      ? "bg-white/20 text-white border border-white/30"
+                      : "bg-primary text-primary-foreground"
+                    : bgUrl
+                      ? "text-white/60 hover:text-white hover:bg-white/10 border border-transparent"
+                      : "text-muted-foreground hover:bg-accent border border-transparent"
+                )}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Bottom-right: new image button */}
@@ -402,30 +363,19 @@ function App() {
         {statusMessage}
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button
-            onClick={handleGoHome}
-            aria-label="Go to homepage"
-            className="shrink-0 text-xl font-bold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded"
-          >
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              HS
-            </span>
-          </button>
-          <SearchBar initialQuery={query} onSearch={(q) => doSearch(q)} className="flex-1" />
-          <button
-            onClick={() => setShowSettings(true)}
-            className="shrink-0 rounded-full p-2 text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            aria-label="Open settings"
-          >
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </div>
+      {/* Shared header with search bar in center slot */}
+      <AppHeader
+        onGoHome={handleGoHome}
+        onShowSettings={() => setShowSettings(true)}
+        onShowBookmarks={handleShowBookmarks}
+        onShowGallery={handleShowGallery}
+      >
+        <SearchBar initialQuery={query} onSearch={(q) => doSearch(q)} />
+      </AppHeader>
 
-        {/* Category tabs */}
-        <nav aria-label="Search categories" className="flex items-center gap-1 px-4 pb-2">
+      {/* Category / filter bar */}
+      <div className="sticky top-[57px] z-30 border-b bg-background/95 backdrop-blur">
+        <nav aria-label="Search categories" className="flex items-center gap-1 px-4 py-2">
           {([
             { key: "web" as const, label: "Web", icon: Globe },
             { key: "images" as const, label: "Images", icon: ImageIcon },
@@ -469,7 +419,7 @@ function App() {
             </>
           )}
         </nav>
-      </header>
+      </div>
 
       {/* Content */}
       <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
@@ -554,28 +504,8 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t px-4 py-3">
-        <div className="mx-auto flex max-w-6xl items-center justify-between text-xs text-muted-foreground">
-          <span>Hey Search</span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleShowBookmarks}
-              className="flex items-center gap-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
-            >
-              <BookmarkIcon className="h-3 w-3" aria-hidden="true" />
-              Bookmarks
-            </button>
-            <a
-              href="/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
-            >
-              <ExternalLink className="h-3 w-3" aria-hidden="true" />
-              API Docs
-            </a>
-          </div>
-        </div>
+      <footer className="border-t px-4 py-3 text-xs text-muted-foreground">
+        <div className="mx-auto max-w-6xl text-center">Hey Search</div>
       </footer>
 
       {/* Error toasts */}

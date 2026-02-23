@@ -1,11 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Trash2, ExternalLink, Loader2 } from "lucide-react";
+import { Trash2, ExternalLink, Loader2 } from "lucide-react";
 import type { Bookmark } from "@/lib/api";
 import { getBookmarks, removeBookmark } from "@/lib/api";
+import { AppHeader } from "@/components/AppHeader";
 
 type FilterType = "" | "web" | "image";
 
-export function Bookmarks() {
+interface BookmarksProps {
+  onGoHome: () => void;
+  onShowSettings: () => void;
+  onShowGallery: () => void;
+}
+
+export function Bookmarks({ onGoHome, onShowSettings, onShowGallery }: BookmarksProps) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -42,11 +49,6 @@ export function Bookmarks() {
     load(next, filter);
   };
 
-  const goHome = () => {
-    window.history.pushState({}, "", "/");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-
   const tabs: { label: string; value: FilterType }[] = [
     { label: "All", value: "" },
     { label: "Web", value: "web" },
@@ -56,20 +58,20 @@ export function Bookmarks() {
   const hasMore = bookmarks.length < total;
 
   return (
-    <div className="mx-auto min-h-screen max-w-6xl px-4 py-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center gap-4">
-        <button
-          onClick={goHome}
-          aria-label="Go back home"
-          className="rounded-full p-2 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-2xl font-bold">Bookmarks</h1>
-        <span className="text-sm text-muted-foreground">({total})</span>
-      </div>
+    <div className="min-h-screen bg-background">
+      <AppHeader
+        onGoHome={onGoHome}
+        onShowSettings={onShowSettings}
+        onShowBookmarks={() => {}}
+        onShowGallery={onShowGallery}
+      >
+        <h1 className="text-base font-semibold">
+          Bookmarks
+          <span className="ml-2 text-sm font-normal text-muted-foreground">({total})</span>
+        </h1>
+      </AppHeader>
 
+      <div className="mx-auto max-w-6xl px-4 py-6">
       {/* Filter tabs */}
       <div className="mb-6 flex gap-2" role="tablist" aria-label="Bookmark type filter">
         {tabs.map((tab) => (
@@ -209,6 +211,7 @@ export function Bookmarks() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       )}
+      </div>
     </div>
   );
 }
