@@ -10,13 +10,14 @@ RUN npm run build
 FROM python:3.12-slim AS production
 WORKDIR /app
 
-# Install system deps for lxml
+# Install uv and system deps for lxml
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2 libxslt1.1 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --frozen --no-dev
 
 COPY backend/ .
 
@@ -25,4 +26,4 @@ COPY --from=frontend-build /app/frontend/dist /app/static
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
