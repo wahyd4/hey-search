@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import logging
 from pathlib import Path
@@ -9,7 +10,9 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "hey_search.db"
+# Data directory: configurable via DATA_DIR env var, defaults to ./data
+DATA_DIR = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent.parent / "data"))
+DB_PATH = DATA_DIR / "hey_search.db"
 
 
 def _get_conn() -> sqlite3.Connection:

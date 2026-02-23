@@ -24,6 +24,11 @@ COPY backend/ .
 # Copy frontend build output to static dir
 COPY --from=frontend-build /app/frontend/dist /app/static
 
+# Persistent data directory for SQLite DB and configuration
+ENV DATA_DIR=/app/data
+ENV REDIS_URL=""
+VOLUME ["/app/data"]
+
 EXPOSE 8000
 
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
