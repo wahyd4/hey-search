@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
-import { Search, Settings, Globe, ImageIcon, Loader2 } from "lucide-react";
+import { Search, Settings, Globe, ImageIcon, Loader2, Ban } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
 import { EngineSettings } from "@/components/EngineSettings";
+import { ExcludedDomains } from "@/components/ExcludedDomains";
 import { ErrorToast } from "@/components/ErrorToast";
 import { search as apiSearch, isImageResult, type SearchResponse, type WebResult, type ImageResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ function App() {
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showExcluded, setShowExcluded] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   const doSearch = useCallback(
@@ -72,9 +74,16 @@ function App() {
           >
             <Settings className="h-4 w-4" /> Engines
           </button>
+          <button
+            onClick={() => setShowExcluded(true)}
+            className="flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+          >
+            <Ban className="h-4 w-4" /> Excluded Sites
+          </button>
         </div>
 
         <EngineSettings open={showSettings} onClose={() => setShowSettings(false)} />
+        <ExcludedDomains open={showExcluded} onClose={() => setShowExcluded(false)} />
       </div>
     );
   }
@@ -97,8 +106,16 @@ function App() {
           <button
             onClick={() => setShowSettings(true)}
             className="shrink-0 rounded-full p-2 text-muted-foreground hover:bg-accent"
+            title="Engine settings"
           >
             <Settings className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setShowExcluded(true)}
+            className="shrink-0 rounded-full p-2 text-muted-foreground hover:bg-accent"
+            title="Excluded sites"
+          >
+            <Ban className="h-5 w-5" />
           </button>
         </div>
 
@@ -149,6 +166,7 @@ function App() {
 
       {/* Settings modal */}
       <EngineSettings open={showSettings} onClose={() => setShowSettings(false)} />
+      <ExcludedDomains open={showExcluded} onClose={() => setShowExcluded(false)} />
     </div>
   );
 }

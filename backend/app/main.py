@@ -10,10 +10,12 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.engines import registry
+from app.excluded import init_db
 
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    init_db()
     registry.load_default_engines()
     yield
 

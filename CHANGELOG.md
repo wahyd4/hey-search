@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0
+
+### Added
+
+- **Domain exclusion** — exclude specific websites from search results
+  - SQLite-backed persistence (`backend/data/hey_search.db`)
+  - REST API: `GET/POST /api/excluded-domains`, `DELETE /api/excluded-domains/{domain}`
+  - UI modal to view, add, and remove excluded domains
+  - Sub-domain matching (excluding `example.com` also excludes `sub.example.com`)
+
 ## 1.0.0 — 2026-02-23
 
 ### Added

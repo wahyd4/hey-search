@@ -11,6 +11,7 @@ import httpx
 from app.models import WebResult, ImageResult, EngineError, SearchResponse
 from app.engines.base import SearchEngine, SearchCategory
 from app.engines import registry
+from app.excluded import is_url_excluded
 
 logger = logging.getLogger(__name__)
 
@@ -88,11 +89,11 @@ async def search(
         if error:
             all_errors.append(error)
 
-    # Deduplicate by URL
+    # Deduplicate by URL and filter excluded domains
     seen_urls: set[str] = set()
     unique_results: list[WebResult | ImageResult] = []
     for r in all_results:
-        if r.url not in seen_urls:
+        if r.url not in seen_urls and not is_url_excluded(r.url):
             seen_urls.add(r.url)
             unique_results.append(r)
 

@@ -6,6 +6,7 @@
 - **Image search** — image results with a responsive grid layout and lightbox viewer
 - **Autocomplete** — live search suggestions as you type (cascades Google → DuckDuckGo → Brave)
 - **URL deduplication** — duplicate results from multiple engines are merged automatically
+- **Domain exclusion** — exclude specific websites from search results; settings persist in SQLite
 
 ## REST API
 
@@ -31,6 +32,7 @@
 - Web results show favicons, engine badges, and content snippets
 - Image results displayed in a responsive grid with hover previews and a full lightbox
 - Engine settings modal with toggle switches
+- Excluded domains management modal with add/remove UI
 - Keyboard navigation for autocomplete suggestions (↑↓ arrows, Enter, Escape)
 
 ## Deployment

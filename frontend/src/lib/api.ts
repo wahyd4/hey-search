@@ -84,3 +84,36 @@ export async function toggleEngine(
 export function isImageResult(r: WebResult | ImageResult): r is ImageResult {
   return "img_src" in r;
 }
+
+// --- Excluded Domains ---
+
+export interface ExcludedDomainsResponse {
+  domains: string[];
+}
+
+export async function getExcludedDomains(): Promise<string[]> {
+  const resp = await fetch(`${API_BASE}/excluded-domains`);
+  if (!resp.ok) return [];
+  const data: ExcludedDomainsResponse = await resp.json();
+  return data.domains;
+}
+
+export async function addExcludedDomain(domain: string): Promise<string[]> {
+  const resp = await fetch(`${API_BASE}/excluded-domains`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ domain }),
+  });
+  if (!resp.ok) throw new Error("Failed to add domain");
+  const data: ExcludedDomainsResponse = await resp.json();
+  return data.domains;
+}
+
+export async function removeExcludedDomain(domain: string): Promise<string[]> {
+  const resp = await fetch(`${API_BASE}/excluded-domains/${encodeURIComponent(domain)}`, {
+    method: "DELETE",
+  });
+  if (!resp.ok) throw new Error("Failed to remove domain");
+  const data: ExcludedDomainsResponse = await resp.json();
+  return data.domains;
+}
