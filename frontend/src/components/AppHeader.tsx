@@ -116,7 +116,15 @@ export function AppHeader({
               ? (NAV_ITEMS.length - 1 - i) * STAGGER_MS
               : 0;
 
-            const sharedStyle: React.CSSProperties = {
+            // Outer wrapper collapses to width 0 when closed so it doesn't
+            // squeeze sibling content (e.g. the search bar on the results page).
+            const wrapperStyle: React.CSSProperties = {
+              maxWidth: menuOpen ? "120px" : "0px",
+              overflow: "hidden",
+              transition: `max-width 180ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+            };
+
+            const innerStyle: React.CSSProperties = {
               transitionProperty: "opacity, transform",
               transitionDuration: "180ms",
               transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -130,35 +138,37 @@ export function AppHeader({
 
             if (item.href) {
               return (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={item.label}
-                  title={item.label}
-                  className={itemBase}
-                  style={sharedStyle}
-                  onClick={close}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </a>
+                <div key={item.id} style={wrapperStyle}>
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={item.label}
+                    title={item.label}
+                    className={itemBase}
+                    style={innerStyle}
+                    onClick={close}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </a>
+                </div>
               );
             }
 
             return (
-              <button
-                key={item.id}
-                onClick={actions[item.id]}
-                aria-label={item.label}
-                title={item.label}
-                className={itemBase}
-                style={sharedStyle}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{item.label}</span>
-              </button>
+              <div key={item.id} style={wrapperStyle}>
+                <button
+                  onClick={actions[item.id]}
+                  aria-label={item.label}
+                  title={item.label}
+                  className={itemBase}
+                  style={innerStyle}
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{item.label}</span>
+                </button>
+              </div>
             );
           })}
 
