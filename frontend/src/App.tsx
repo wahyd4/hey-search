@@ -1,10 +1,9 @@
 import { useState, useCallback } from "react";
-import { Search, Settings, Globe, ImageIcon, Loader2, Ban } from "lucide-react";
+import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
-import { EngineSettings } from "@/components/EngineSettings";
-import { ExcludedDomains } from "@/components/ExcludedDomains";
+import { SettingsModal } from "@/components/SettingsModal";
 import { ErrorToast } from "@/components/ErrorToast";
 import { search as apiSearch, isImageResult, type SearchResponse, type WebResult, type ImageResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -17,7 +16,6 @@ function App() {
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showExcluded, setShowExcluded] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   const doSearch = useCallback(
@@ -67,30 +65,35 @@ function App() {
 
         <SearchBar onSearch={(q) => doSearch(q)} className="w-full" />
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6">
           <button
             onClick={() => setShowSettings(true)}
             className="flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
           >
-            <Settings className="h-4 w-4" /> Engines
-          </button>
-          <button
-            onClick={() => setShowExcluded(true)}
-            className="flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
-          >
-            <Ban className="h-4 w-4" /> Excluded Sites
+            <Settings className="h-4 w-4" /> Settings
           </button>
         </div>
 
-        <EngineSettings open={showSettings} onClose={() => setShowSettings(false)} />
-        <ExcludedDomains open={showExcluded} onClose={() => setShowExcluded(false)} />
+        <footer className="absolute bottom-6 text-center">
+          <a
+            href="/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            API Docs
+          </a>
+        </footer>
+
+        <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       </div>
     );
   }
 
   // Results page
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="flex items-center gap-3 px-4 py-3">
@@ -106,16 +109,9 @@ function App() {
           <button
             onClick={() => setShowSettings(true)}
             className="shrink-0 rounded-full p-2 text-muted-foreground hover:bg-accent"
-            title="Engine settings"
+            title="Settings"
           >
             <Settings className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => setShowExcluded(true)}
-            className="shrink-0 rounded-full p-2 text-muted-foreground hover:bg-accent"
-            title="Excluded sites"
-          >
-            <Ban className="h-5 w-5" />
           </button>
         </div>
 
@@ -143,7 +139,7 @@ function App() {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -161,12 +157,27 @@ function App() {
         )}
       </main>
 
+      {/* Footer */}
+      <footer className="border-t px-4 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between text-xs text-muted-foreground">
+          <span>Hey Search</span>
+          <a
+            href="/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            API Docs
+          </a>
+        </div>
+      </footer>
+
       {/* Error toasts */}
       {response?.errors && <ErrorToast errors={response.errors} />}
 
       {/* Settings modal */}
-      <EngineSettings open={showSettings} onClose={() => setShowSettings(false)} />
-      <ExcludedDomains open={showExcluded} onClose={() => setShowExcluded(false)} />
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

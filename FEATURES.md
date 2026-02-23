@@ -33,7 +33,9 @@
 - Image results displayed in a responsive grid with hover previews and a full lightbox
 - Engine settings modal with toggle switches
 - Excluded domains management modal with add/remove UI
+- **Unified settings modal** — single Settings button opens a tabbed modal (Engines, Excluded Sites)
 - Keyboard navigation for autocomplete suggestions (↑↓ arrows, Enter, Escape)
+- Footer with link to interactive API documentation (Swagger UI)
 
 ## Deployment
 

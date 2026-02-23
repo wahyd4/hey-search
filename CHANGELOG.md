@@ -7,8 +7,12 @@
 - **Domain exclusion** — exclude specific websites from search results
   - SQLite-backed persistence (`backend/data/hey_search.db`)
   - REST API: `GET/POST /api/excluded-domains`, `DELETE /api/excluded-domains/{domain}`
-  - UI modal to view, add, and remove excluded domains
   - Sub-domain matching (excluding `example.com` also excludes `sub.example.com`)
+
+### Changed
+
+- **Unified settings modal** — replaced separate Engines and Excluded Sites buttons with a single Settings button that opens a tabbed modal
+- Added footer on both home and results pages with a link to the interactive API documentation (Swagger UI at `/docs`)
 
 ## 1.0.0 — 2026-02-23
 
