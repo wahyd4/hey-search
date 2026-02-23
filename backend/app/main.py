@@ -1,11 +1,13 @@
 """Hey Search - A metasearch engine."""
 
+import json
 import os
 import time
 from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +30,8 @@ app = FastAPI(
     description="A privacy-respecting metasearch engine. See endpoints below for usage with curl examples.",
     version="1.4.0",
     lifespan=lifespan,
+    # Disable the default /openapi.json — we serve a dynamic one below
+    openapi_url=None,
 )
 
 app.add_middleware(
@@ -39,6 +43,47 @@ app.add_middleware(
 )
 
 
+# Cache the base schema (without servers) so we only compute it once
+_openapi_schema_cache: dict | None = None
+
+
+def _get_base_openapi_schema() -> dict:
+    """Generate the OpenAPI schema once and cache it."""
+    global _openapi_schema_cache
+    if _openapi_schema_cache is None:
+        _openapi_schema_cache = get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            routes=app.routes,
+        )
+    return _openapi_schema_cache
+
+
+@app.get("/openapi.json", include_in_schema=False)
+async def dynamic_openapi(request: Request):
+    """Serve OpenAPI schema with servers[] matching the caller's origin."""
+    base = _get_base_openapi_schema()
+
+    # Derive the base URL from the request
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "localhost")
+    base_url = f"{proto}://{host}"
+
+    # Deep-replace $BASE_URL in all description strings and set servers
+    raw = json.dumps(base)
+    raw = raw.replace("$BASE_URL", base_url)
+    schema = json.loads(raw)
+
+    schema["servers"] = [{"url": base_url, "description": "Current server"}]
+    return schema
+
+
+# Wire Swagger UI and Redoc to our dynamic endpoint
+app.openapi_url = "/openapi.json"
+app.setup()
+
+
 @app.middleware("http")
 async def add_rate_limit_headers(request: Request, call_next):
     """Add rate-limit placeholder and timing headers."""
@@ -46,7 +91,6 @@ async def add_rate_limit_headers(request: Request, call_next):
     response = await call_next(request)
     elapsed_ms = round((time.monotonic() - start) * 1000)
     response.headers["X-Response-Time-Ms"] = str(elapsed_ms)
-    # Rate-limit headers (placeholder values — no enforced limiting yet)
     response.headers["X-RateLimit-Limit"] = "60"
     response.headers["X-RateLimit-Remaining"] = "59"
     return response

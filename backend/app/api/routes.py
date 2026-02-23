@@ -25,7 +25,7 @@ router = APIRouter()
 
 **Example (curl):**
 ```bash
-curl 'http://localhost:8000/api/search?q=hello+world&category=web&page=1'
+curl '$BASE_URL/api/search?q=hello+world&category=web&page=1'
 ```
 
 **Example response (truncated):**
@@ -53,7 +53,7 @@ curl 'http://localhost:8000/api/search?q=hello+world&category=web&page=1'
 
 **Image search with size filter:**
 ```bash
-curl 'http://localhost:8000/api/search?q=cats&category=images&image_size=large'
+curl '$BASE_URL/api/search?q=cats&category=images&image_size=large'
 ```
 """,
     tags=["Search"],
@@ -88,7 +88,7 @@ class AutocompleteResponse(BaseModel):
 
 **Example:**
 ```bash
-curl 'http://localhost:8000/api/autocomplete?q=pyth'
+curl '$BASE_URL/api/autocomplete?q=pyth'
 ```
 
 **Response:**
@@ -118,7 +118,7 @@ async def api_autocomplete(
 
 **Example:**
 ```bash
-curl 'http://localhost:8000/api/engines'
+curl '$BASE_URL/api/engines'
 ```
 """,
     tags=["Engines"],
@@ -139,7 +139,7 @@ class EngineToggleRequest(BaseModel):
 
 **Example:**
 ```bash
-curl -X PUT 'http://localhost:8000/api/engines/google' \\
+curl -X PUT '$BASE_URL/api/engines/google' \\
   -H 'Content-Type: application/json' \\
   -d '{"enabled": false}'
 ```
@@ -177,7 +177,7 @@ class AddDomainRequest(BaseModel):
 
 **Example:**
 ```bash
-curl 'http://localhost:8000/api/excluded-domains'
+curl '$BASE_URL/api/excluded-domains'
 ```
 """,
     tags=["Exclusions"],
@@ -194,7 +194,7 @@ async def api_list_excluded_domains():
 
 **Example:**
 ```bash
-curl -X POST 'http://localhost:8000/api/excluded-domains' \\
+curl -X POST '$BASE_URL/api/excluded-domains' \\
   -H 'Content-Type: application/json' \\
   -d '{"domain": "example.com"}'
 ```
@@ -214,7 +214,7 @@ async def api_add_excluded_domain(body: AddDomainRequest):
 
 **Example:**
 ```bash
-curl -X DELETE 'http://localhost:8000/api/excluded-domains/example.com'
+curl -X DELETE '$BASE_URL/api/excluded-domains/example.com'
 ```
 """,
     tags=["Exclusions"],
