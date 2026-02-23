@@ -1,13 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { ImageResult } from "@/lib/api";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageResultsProps {
   results: ImageResult[];
 }
 
 export function ImageResults({ results }: ImageResultsProps) {
-  const [selected, setSelected] = useState<ImageResult | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const selected = selectedIndex !== null ? results[selectedIndex] : null;
+
+  const goPrev = useCallback(() => {
+    setSelectedIndex((i) => (i !== null && i > 0 ? i - 1 : i));
+  }, []);
+
+  const goNext = useCallback(() => {
+    setSelectedIndex((i) => (i !== null && i < results.length - 1 ? i + 1 : i));
+  }, [results.length]);
+
+  const close = useCallback(() => setSelectedIndex(null), []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (selectedIndex === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      else if (e.key === "Escape") { close(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedIndex, goPrev, goNext, close]);
 
   if (results.length === 0) return null;
 
@@ -18,7 +42,7 @@ export function ImageResults({ results }: ImageResultsProps) {
         {results.map((img, i) => (
           <button
             key={`${img.img_src}-${i}`}
-            onClick={() => setSelected(img)}
+            onClick={() => setSelectedIndex(i)}
             className="group relative mb-3 inline-block w-full overflow-hidden rounded-lg border bg-muted break-inside-avoid hover:ring-2 hover:ring-ring transition-shadow"
           >
             <img
@@ -43,18 +67,36 @@ export function ImageResults({ results }: ImageResultsProps) {
       </div>
 
       {/* Lightbox */}
-      {selected && (
+      {selected && selectedIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setSelected(null)}
+          onClick={close}
         >
+          {/* Prev button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            disabled={selectedIndex <= 0}
+            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 p-2 text-foreground shadow-lg hover:bg-background disabled:pointer-events-none disabled:opacity-30 sm:left-4"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+
+          {/* Next button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); goNext(); }}
+            disabled={selectedIndex >= results.length - 1}
+            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 p-2 text-foreground shadow-lg hover:bg-background disabled:pointer-events-none disabled:opacity-30 sm:right-4"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+
           <div
             className="relative max-h-[90vh] max-w-4xl overflow-auto rounded-lg bg-card p-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setSelected(null)}
-              className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 hover:bg-background"
+              onClick={close}
+              className="absolute right-2 top-2 z-10 rounded-full bg-background/80 p-1.5 hover:bg-background"
             >
               <X className="h-5 w-5" />
             </button>
@@ -68,6 +110,9 @@ export function ImageResults({ results }: ImageResultsProps) {
               <h3 className="font-medium">{selected.title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Source: {selected.source} • Engine: {selected.engine}
+                <span className="ml-2 tabular-nums opacity-60">
+                  {selectedIndex + 1} / {results.length}
+                </span>
               </p>
               <a
                 href={selected.url}
