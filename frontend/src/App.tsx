@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal, RefreshCw, Images } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
 import { SearchStats } from "@/components/SearchStats";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ErrorToast } from "@/components/ErrorToast";
-import { search as apiSearch, isImageResult, type SearchResponse, type WebResult, type ImageResult } from "@/lib/api";
+import { BackgroundGallery } from "@/components/BackgroundGallery";
+import { search as apiSearch, isImageResult, getBackground, refreshBackground, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Category = "web" | "images";
@@ -53,7 +54,17 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hasSearched, setHasSearched] = useState(!!initial.q);
+  const [showGallery, setShowGallery] = useState(window.location.pathname === "/backgrounds");
   const statusRef = useRef<HTMLDivElement>(null);
+
+  // Background image state
+  const [bgInfo, setBgInfo] = useState<BackgroundInfo | null>(null);
+  const [bgRefreshing, setBgRefreshing] = useState(false);
+
+  // Fetch background on mount
+  useEffect(() => {
+    getBackground().then(setBgInfo).catch(() => {});
+  }, []);
 
   const doSearch = useCallback(
     async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true) => {
@@ -100,6 +111,11 @@ function App() {
   // Handle browser back/forward
   useEffect(() => {
     const onPopState = () => {
+      if (window.location.pathname === "/backgrounds") {
+        setShowGallery(true);
+        return;
+      }
+      setShowGallery(false);
       const { q, cat, page: p, imageSize: size } = parseUrlState();
       if (q) {
         doSearch(q, cat, p, size, false);
@@ -137,48 +153,119 @@ function App() {
     setResponse(null);
     setPage(1);
     setImageSize("");
+    setShowGallery(false);
     window.history.pushState(null, "", "/");
+    // Re-fetch background in case it changed
+    getBackground().then(setBgInfo).catch(() => {});
+  };
+
+  const handleRefreshBg = async () => {
+    setBgRefreshing(true);
+    try {
+      const info = await refreshBackground();
+      setBgInfo(info);
+    } catch {
+      // ignore
+    } finally {
+      setBgRefreshing(false);
+    }
+  };
+
+  const handleShowGallery = () => {
+    setShowGallery(true);
+    window.history.pushState(null, "", "/backgrounds");
   };
 
   const webResults = response?.results.filter((r): r is WebResult => !isImageResult(r)) ?? [];
   const imageResults = response?.results.filter((r): r is ImageResult => isImageResult(r)) ?? [];
   const hasResults = (response?.results.length ?? 0) > 0;
 
+  // Gallery page
+  if (showGallery) {
+    return <BackgroundGallery onBack={handleGoHome} />;
+  }
+
+  const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
+
   // Home page (no search yet)
   if (!hasSearched) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+        {/* Background image */}
+        {bgUrl && (
+          <div
+            className="absolute inset-0 -z-10 bg-cover bg-center transition-opacity duration-700"
+            style={{ backgroundImage: `url(${bgUrl})` }}
+          >
+            <div className="absolute inset-0 bg-black/40 dark:bg-black/60" />
+          </div>
+        )}
+
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className={cn(
+              "bg-clip-text text-transparent",
+              bgUrl
+                ? "bg-gradient-to-r from-white to-white/90"
+                : "bg-gradient-to-r from-blue-600 to-purple-600"
+            )}>
               Hey Search
             </span>
           </h1>
-          <p className="mt-2 text-muted-foreground">Private metasearch engine</p>
+          <p className={cn("mt-2", bgUrl ? "text-white/70" : "text-muted-foreground")}>
+            Private metasearch engine
+          </p>
         </div>
 
         <SearchBar onSearch={(q) => doSearch(q)} className="w-full" />
 
-        <div className="mt-6">
+        <div className="mt-6 flex items-center gap-3">
           <button
             onClick={() => setShowSettings(true)}
             aria-label="Open settings"
-            className="flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              bgUrl ? "border-white/30 text-white/80 hover:text-white" : "text-muted-foreground"
+            )}
           >
             <Settings className="h-4 w-4" aria-hidden="true" /> Settings
           </button>
+          {bgUrl && (
+            <button
+              onClick={handleRefreshBg}
+              disabled={bgRefreshing}
+              aria-label="New background image"
+              className="flex items-center gap-1.5 rounded-full border border-white/30 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-accent/20 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <RefreshCw className={cn("h-4 w-4", bgRefreshing && "animate-spin")} aria-hidden="true" />
+              {bgRefreshing ? "Loading…" : "New image"}
+            </button>
+          )}
         </div>
 
-        <footer className="absolute bottom-6 text-center">
+        <footer className={cn("absolute bottom-6 flex items-center gap-4", bgUrl ? "text-white/60" : "")}>
           <a
             href="/docs"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
+            className={cn(
+              "flex items-center gap-1.5 text-xs hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors",
+              bgUrl ? "text-white/60 hover:text-white" : "text-muted-foreground"
+            )}
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             API Docs
           </a>
+          <button
+            onClick={handleShowGallery}
+            className={cn(
+              "flex items-center gap-1.5 text-xs hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors",
+              bgUrl ? "text-white/60 hover:text-white" : "text-muted-foreground"
+            )}
+          >
+            <Images className="h-3.5 w-3.5" aria-hidden="true" />
+            Backgrounds
+          </button>
         </footer>
 
         <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />

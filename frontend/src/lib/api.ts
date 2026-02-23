@@ -149,6 +149,8 @@ export interface AppSettings {
   cache_ttl_hours: number;
   cache_available: boolean;
   redis_url: string;
+  bg_enabled: boolean;
+  bg_refresh_minutes: number;
 }
 
 export async function getSettings(): Promise<AppSettings> {
@@ -157,7 +159,7 @@ export async function getSettings(): Promise<AppSettings> {
   return resp.json();
 }
 
-export async function updateSettings(settings: { cache_ttl_hours?: number; redis_url?: string }): Promise<AppSettings> {
+export async function updateSettings(settings: { cache_ttl_hours?: number; redis_url?: string; bg_enabled?: boolean; bg_refresh_minutes?: number }): Promise<AppSettings> {
   const resp = await fetch(`${API_BASE}/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -170,5 +172,38 @@ export async function updateSettings(settings: { cache_ttl_hours?: number; redis
 export async function flushCache(): Promise<{ keys_deleted: number; message: string }> {
   const resp = await fetch(`${API_BASE}/cache`, { method: "DELETE" });
   if (!resp.ok) throw new Error("Failed to flush cache");
+  return resp.json();
+}
+
+// --- Background ---
+
+export interface BackgroundInfo {
+  filename: string | null;
+  url: string | null;
+  enabled: boolean;
+}
+
+export interface BackgroundListItem {
+  filename: string;
+  url: string;
+  size_bytes: number;
+  created_at: number;
+}
+
+export async function getBackground(): Promise<BackgroundInfo> {
+  const resp = await fetch(`${API_BASE}/background`);
+  if (!resp.ok) throw new Error("Failed to fetch background");
+  return resp.json();
+}
+
+export async function refreshBackground(): Promise<BackgroundInfo> {
+  const resp = await fetch(`${API_BASE}/background/refresh`, { method: "POST" });
+  if (!resp.ok) throw new Error("Failed to refresh background");
+  return resp.json();
+}
+
+export async function listBackgrounds(page = 1, perPage = 20): Promise<BackgroundListItem[]> {
+  const resp = await fetch(`${API_BASE}/backgrounds?page=${page}&per_page=${perPage}`);
+  if (!resp.ok) throw new Error("Failed to list backgrounds");
   return resp.json();
 }

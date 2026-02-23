@@ -237,11 +237,15 @@ class SettingsResponse(BaseModel):
     cache_ttl_hours: float = Field(description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
     cache_available: bool = Field(description="Whether Redis is connected and available")
     redis_url: str = Field(default="", description="Redis connection URL (e.g. redis://localhost:6379)")
+    bg_enabled: bool = Field(default=True, description="Whether homepage background image is enabled")
+    bg_refresh_minutes: int = Field(default=30, description="Background image refresh interval in minutes (1-1440)")
 
 
 class UpdateSettingsRequest(BaseModel):
     cache_ttl_hours: float | None = Field(default=None, ge=0, le=168, description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
     redis_url: str | None = Field(default=None, description="Redis connection URL (empty string to disconnect)")
+    bg_enabled: bool | None = Field(default=None, description="Enable/disable homepage background image")
+    bg_refresh_minutes: int | None = Field(default=None, ge=1, le=1440, description="Background refresh interval in minutes")
 
 
 @router.get(
@@ -263,6 +267,8 @@ async def api_get_settings():
         cache_ttl_hours=float(settings.get("cache_ttl_hours", "6")),
         cache_available=is_cache_available(),
         redis_url=settings.get("redis_url", ""),
+        bg_enabled=settings.get("bg_enabled", "true") == "true",
+        bg_refresh_minutes=int(float(settings.get("bg_refresh_minutes", "30"))),
     )
 
 
@@ -287,11 +293,17 @@ async def api_update_settings(body: UpdateSettingsRequest):
     if body.redis_url is not None:
         set_setting("redis_url", body.redis_url)
         await reconnect_redis(body.redis_url)
+    if body.bg_enabled is not None:
+        set_setting("bg_enabled", "true" if body.bg_enabled else "false")
+    if body.bg_refresh_minutes is not None:
+        set_setting("bg_refresh_minutes", str(body.bg_refresh_minutes))
     settings = get_all_settings()
     return SettingsResponse(
         cache_ttl_hours=float(settings.get("cache_ttl_hours", "6")),
         cache_available=is_cache_available(),
         redis_url=settings.get("redis_url", ""),
+        bg_enabled=settings.get("bg_enabled", "true") == "true",
+        bg_refresh_minutes=int(float(settings.get("bg_refresh_minutes", "30"))),
     )
 
 
@@ -318,3 +330,88 @@ curl -X DELETE '$BASE_URL/api/cache'
 async def api_flush_cache():
     count = await flush_cache()
     return CacheFlushResponse(keys_deleted=count, message=f"Deleted {count} cached entries")
+
+
+# --- Background Images ---
+
+from fastapi.responses import FileResponse
+from app.background import get_current_background, fetch_new_background, list_backgrounds, get_background_path
+
+
+class BackgroundResponse(BaseModel):
+    filename: str | None = None
+    url: str | None = None
+    enabled: bool = True
+
+
+class BackgroundListItem(BaseModel):
+    filename: str
+    url: str
+    size_bytes: int
+    created_at: float
+
+
+@router.get(
+    "/background",
+    response_model=BackgroundResponse,
+    summary="Get current homepage background image info",
+    tags=["Background"],
+)
+async def api_get_background():
+    from app.background import is_background_enabled
+    enabled = is_background_enabled()
+    if not enabled:
+        return BackgroundResponse(enabled=False)
+    filename = await get_current_background()
+    if filename:
+        return BackgroundResponse(filename=filename, url=f"/api/backgrounds/{filename}", enabled=True)
+    return BackgroundResponse(enabled=True)
+
+
+@router.post(
+    "/background/refresh",
+    response_model=BackgroundResponse,
+    summary="Fetch a new background image immediately",
+    tags=["Background"],
+)
+async def api_refresh_background():
+    filename = await fetch_new_background()
+    if filename:
+        return BackgroundResponse(filename=filename, url=f"/api/backgrounds/{filename}", enabled=True)
+    return JSONResponse(status_code=502, content={"code": "fetch_failed", "message": "Could not fetch background image"})
+
+
+@router.get(
+    "/backgrounds",
+    response_model=list[BackgroundListItem],
+    summary="List all saved background images",
+    tags=["Background"],
+)
+async def api_list_backgrounds(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+):
+    all_bgs = list_backgrounds()
+    start = (page - 1) * per_page
+    items = all_bgs[start:start + per_page]
+    return [
+        BackgroundListItem(
+            filename=b["filename"],
+            url=f"/api/backgrounds/{b['filename']}",
+            size_bytes=b["size_bytes"],
+            created_at=b["created_at"],
+        )
+        for b in items
+    ]
+
+
+@router.get(
+    "/backgrounds/{filename}",
+    summary="Serve a background image file",
+    tags=["Background"],
+)
+async def api_serve_background(filename: str):
+    path = get_background_path(filename)
+    if path is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "message": "Image not found"})
+    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})

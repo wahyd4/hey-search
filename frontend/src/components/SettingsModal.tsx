@@ -1,11 +1,11 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { Settings, ToggleLeft, ToggleRight, Plus, Trash2, ExternalLink, Database } from "lucide-react";
+import { Settings, ToggleLeft, ToggleRight, Plus, Trash2, ExternalLink, Database, ImageIcon } from "lucide-react";
 import { getEngines, toggleEngine, type EngineInfo } from "@/lib/api";
 import { getExcludedDomains, addExcludedDomain, removeExcludedDomain } from "@/lib/api";
 import { getSettings, updateSettings, flushCache, type AppSettings } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-type Tab = "engines" | "excluded" | "cache";
+type Tab = "engines" | "excluded" | "cache" | "background";
 
 interface SettingsModalProps {
   open: boolean;
@@ -46,6 +46,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
             { key: "engines" as const, label: "Engines" },
             { key: "excluded" as const, label: "Excluded Sites" },
             { key: "cache" as const, label: "Cache" },
+            { key: "background" as const, label: "Background" },
           ]).map(({ key, label }) => (
             <button
               key={key}
@@ -70,6 +71,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
           {tab === "engines" && <EnginesTab />}
           {tab === "excluded" && <ExcludedTab />}
           {tab === "cache" && <CacheTab />}
+          {tab === "background" && <BackgroundTab />}
         </div>
 
         {/* Footer */}
@@ -398,6 +400,128 @@ function CacheTab() {
           {flushing ? "Flushing…" : "Clear all cached results"}
         </button>
         {flushMsg && <p className="mt-2 text-xs text-muted-foreground">{flushMsg}</p>}
+      </div>
+    </div>
+  );
+}
+
+const BG_REFRESH_PRESETS = [
+  { minutes: 1, label: "1 min" },
+  { minutes: 5, label: "5 min" },
+  { minutes: 15, label: "15 min" },
+  { minutes: 30, label: "30 min" },
+  { minutes: 60, label: "1 hour" },
+  { minutes: 360, label: "6 hours" },
+  { minutes: 1440, label: "1 day" },
+];
+
+function BackgroundTab() {
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [refreshMin, setRefreshMin] = useState(30);
+
+  useEffect(() => {
+    getSettings()
+      .then((s) => {
+        setSettings(s);
+        setRefreshMin(s.bg_refresh_minutes);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggle = async () => {
+    setSaving(true);
+    try {
+      const updated = await updateSettings({ bg_enabled: !settings?.bg_enabled });
+      setSettings(updated);
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRefreshSave = async (min: number) => {
+    setRefreshMin(min);
+    setSaving(true);
+    try {
+      const updated = await updateSettings({ bg_refresh_minutes: min });
+      setSettings(updated);
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <p className="py-4 text-center text-muted-foreground">Loading…</p>;
+
+  return (
+    <div className="space-y-5">
+      {/* Enable/disable */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <p className="text-sm font-medium">Homepage Background</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Show a random nature/landscape image from Unsplash on the home page.
+          </p>
+        </div>
+        <button
+          onClick={handleToggle}
+          disabled={saving}
+          aria-label={settings?.bg_enabled ? "Disable background" : "Enable background"}
+          className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded disabled:opacity-50"
+        >
+          {settings?.bg_enabled ? (
+            <ToggleRight className="h-8 w-8 text-primary" />
+          ) : (
+            <ToggleLeft className="h-8 w-8 text-muted-foreground" />
+          )}
+        </button>
+      </div>
+
+      {/* Refresh interval */}
+      <div className={cn(!settings?.bg_enabled && "opacity-50 pointer-events-none")}>
+        <label className="text-sm font-medium block mb-2">Refresh interval</label>
+        <div className="flex flex-wrap gap-2">
+          {BG_REFRESH_PRESETS.map((preset) => (
+            <button
+              key={preset.minutes}
+              onClick={() => handleRefreshSave(preset.minutes)}
+              disabled={saving}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-40",
+                refreshMin === preset.minutes
+                  ? "bg-primary text-primary-foreground"
+                  : "border text-muted-foreground hover:bg-accent"
+              )}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        {/* Slider */}
+        <div className="mt-3 flex items-center gap-3">
+          <input
+            type="range"
+            min={1}
+            max={1440}
+            step={1}
+            value={refreshMin}
+            onChange={(e) => setRefreshMin(Number(e.target.value))}
+            onMouseUp={() => handleRefreshSave(refreshMin)}
+            onTouchEnd={() => handleRefreshSave(refreshMin)}
+            className="flex-1 accent-primary"
+            aria-label="Background refresh interval minutes"
+          />
+          <span className="w-20 text-right text-sm tabular-nums text-muted-foreground">
+            {refreshMin < 60 ? `${refreshMin}m` : refreshMin < 1440 ? `${(refreshMin / 60).toFixed(1)}h` : "1 day"}
+          </span>
+        </div>
       </div>
     </div>
   );
