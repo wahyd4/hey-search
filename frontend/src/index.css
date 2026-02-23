@@ -5,6 +5,8 @@
 html, body {
   overflow-x: hidden;
   overscroll-behavior-x: none;
+  /* Prevent iOS rubber-band scroll from revealing white behind full-screen pages */
+  overscroll-behavior-y: none;
 }
 
 :root {
