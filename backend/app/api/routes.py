@@ -20,11 +20,13 @@ router = APIRouter()
 
 # --- Search ---
 
-@router.get(
+@router.api_route(
     "/search",
+    methods=["GET", "POST"],
     response_model=SearchResponse,
     summary="Search the web or images",
     description="""Performs a metasearch across all enabled engines and returns aggregated, deduplicated results.
+Supports both GET and POST methods with query parameters.
 
 **Example (curl):**
 ```bash
@@ -70,12 +72,18 @@ async def api_search(
     q: str = Query(..., description="Search query string", min_length=1),
     category: Literal["web", "images"] = Query("web", description="Search category"),
     page: int = Query(1, ge=1, le=50, description="Page number"),
+    pageNumber: int | None = Query(None, ge=1, le=50, description="Alias for page (1-based page number)"),
+    numResults: int | None = Query(None, ge=1, le=100, description="Number of results requested (informational)"),
+    format: str | None = Query(None, description="Response format hint (e.g. 'json')"),
+    imageProxy: bool | None = Query(None, description="Whether the client wants image proxying"),
+    safesearch: str | None = Query(None, description="Safe search level (0=off, 1=moderate, 2=strict)"),
     engines: str | None = Query(None, description="Comma-separated engine names to use (e.g. 'google,bing')"),
     image_size: Literal["", "large", "medium", "small"] = Query("", description="Filter images by size (images category only)"),
     sort: Literal["default", "date_asc", "date_desc"] = Query("default", description="Sort results by publish date"),
 ):
+    effective_page = pageNumber if pageNumber is not None else page
     engine_list = [e.strip() for e in engines.split(",")] if engines else None
-    result = await search(q, category=category, page=page, engines=engine_list, image_size=image_size, sort=sort)
+    result = await search(q, category=category, page=effective_page, engines=engine_list, image_size=image_size, sort=sort)
     origin_ip = request.client.host if request.client else ""
     user_agent = request.headers.get("user-agent", "")
     _stats.record_search(
