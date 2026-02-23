@@ -85,7 +85,10 @@ export function AppHeader({
   );
 
   return (
-    <header className={cn("sticky top-0 z-40 border", headerBase)}>
+    <header
+      className={cn("sticky top-0 z-40 border", headerBase)}
+      style={transparent ? { paddingTop: "env(safe-area-inset-top, 0px)" } : undefined}
+    >
       <div className="flex items-center gap-2 px-4 py-3">
         {/* Logo — hidden on home page */}
         {!hideLogo && (

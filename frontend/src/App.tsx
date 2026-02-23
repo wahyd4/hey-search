@@ -73,6 +73,85 @@ function App() {
     getBookmarkedUrls().then(setBookmarkedUrls).catch(() => {});
   }, []);
 
+  const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
+  const isHome = !hasSearched && !showGallery && !showBookmarks;
+
+  // iOS Safari fills top/bottom browser areas from page background color,
+  // so sample image edge colors to avoid white/black bars.
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+    const clearColors = () => {
+      root.style.backgroundColor = "";
+      body.style.backgroundColor = "";
+      if (themeMeta) themeMeta.setAttribute("content", "#000000");
+    };
+
+    if (!isHome || !bgUrl) {
+      clearColors();
+      return;
+    }
+
+    const setColors = (topColor: string, bottomColor: string) => {
+      root.style.backgroundColor = topColor;
+      body.style.backgroundColor = bottomColor;
+      if (themeMeta) themeMeta.setAttribute("content", topColor);
+    };
+
+    setColors("#111111", "#111111");
+
+    const img = new Image();
+    img.src = bgUrl;
+    img.onload = () => {
+      try {
+        const width = img.naturalWidth;
+        const height = img.naturalHeight;
+        if (width < 1 || height < 1) {
+          setColors("#111111", "#111111");
+          return;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setColors("#111111", "#111111");
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0);
+
+        const sampleRowColor = (y: number) => {
+          const pixels = ctx.getImageData(0, y, width, 1).data;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          for (let i = 0; i < pixels.length; i += 4) {
+            r += pixels[i];
+            g += pixels[i + 1];
+            b += pixels[i + 2];
+          }
+          const darken = 0.6; // match bg-black/40 overlay
+          return `rgb(${Math.round((r / width) * darken)}, ${Math.round((g / width) * darken)}, ${Math.round((b / width) * darken)})`;
+        };
+
+        setColors(sampleRowColor(0), sampleRowColor(height - 1));
+      } catch {
+        setColors("#111111", "#111111");
+      }
+    };
+    img.onerror = () => setColors("#111111", "#111111");
+
+    return () => {
+      clearColors();
+    };
+  }, [isHome, bgUrl]);
+
+
+
   const doSearch = useCallback(
     async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true) => {
       if (!q.trim()) return;
@@ -247,106 +326,110 @@ function App() {
     </>;
   }
 
-  const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
-
   // Home page (no search yet)
   if (!hasSearched) {
     return (
-      <div className="relative flex min-h-screen flex-col">
+      <div className="relative min-h-screen" style={{ minHeight: "100svh" }}>
         {/* Background image */}
         {bgUrl && (
           <div
-            className="absolute inset-0 -z-10 bg-cover bg-center transition-opacity duration-700"
-            style={{ backgroundImage: `url(${bgUrl})` }}
+            className="fixed left-0 right-0 bg-cover bg-center transition-opacity duration-700"
+            style={{
+              backgroundImage: `url(${bgUrl})`,
+              top: "calc(env(safe-area-inset-top, 0px) * -1)",
+              bottom: "calc(env(safe-area-inset-bottom, 0px) * -1)",
+            }}
           >
             <div className="absolute inset-0 bg-black/40 dark:bg-black/60" />
           </div>
         )}
 
-        {/* Shared header */}
-        <AppHeader
-          onGoHome={handleGoHome}
-          onShowSettings={() => setShowSettings(true)}
-          onShowBookmarks={handleShowBookmarks}
-          onShowGallery={handleShowGallery}
-          transparent={!!bgUrl}
-          hideLogo
-        />
+        <div className="relative z-10 flex min-h-screen flex-col" style={{ minHeight: "100svh" }}>
+          {/* Shared header */}
+          <AppHeader
+            onGoHome={handleGoHome}
+            onShowSettings={() => setShowSettings(true)}
+            onShowBookmarks={handleShowBookmarks}
+            onShowGallery={handleShowGallery}
+            transparent={!!bgUrl}
+            hideLogo
+          />
 
-        {/* Center content */}
-        <div className="flex flex-1 flex-col items-center justify-center px-4 pb-20">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              <span className={cn(
-                "bg-clip-text text-transparent",
-                bgUrl
-                  ? "bg-gradient-to-r from-white to-white/90"
-                  : "bg-gradient-to-r from-blue-600 to-purple-600"
-              )}>
-                Hey Search
-              </span>
-            </h1>
-            <p className={cn("mt-2", bgUrl ? "text-white/70" : "text-muted-foreground")}>
-              Private metasearch engine
-            </p>
+          {/* Center content */}
+          <div className="flex flex-1 flex-col items-center justify-center px-4 pb-20">
+            <div className="mb-8 text-center">
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+                <span className={cn(
+                  "bg-clip-text text-transparent",
+                  bgUrl
+                    ? "bg-gradient-to-r from-white to-white/90"
+                    : "bg-gradient-to-r from-blue-600 to-purple-600"
+                )}>
+                  Hey Search
+                </span>
+              </h1>
+              <p className={cn("mt-2", bgUrl ? "text-white/70" : "text-muted-foreground")}>
+                Private metasearch engine
+              </p>
+            </div>
+
+            <SearchBar onSearch={(q) => doSearch(q, category)} className="w-full" />
+
+            {/* Category switch */}
+            <div className="mt-4 flex items-center gap-2" role="group" aria-label="Search category">
+              {([
+                { key: "web" as const, label: "Web", icon: Globe },
+                { key: "images" as const, label: "Images", icon: ImageIcon },
+              ]).map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setCategory(key)}
+                  aria-pressed={category === key}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    category === key
+                      ? bgUrl
+                        ? "bg-white/20 text-white border border-white/30"
+                        : "bg-primary text-primary-foreground"
+                      : bgUrl
+                        ? "text-white/60 hover:text-white hover:bg-white/10 border border-transparent"
+                        : "text-muted-foreground hover:bg-accent border border-transparent"
+                  )}
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <SearchBar onSearch={(q) => doSearch(q, category)} className="w-full" />
+          {/* Bottom-right: new image button */}
+          {bgUrl && (
+            <button
+              onClick={handleRefreshBg}
+              disabled={bgRefreshing}
+              aria-label="New background image"
+              title="New background image"
+              className="absolute bottom-6 right-6 flex items-center gap-1.5 rounded-full border border-white/30 bg-black/20 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-black/30 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors backdrop-blur-sm"
+            >
+              <RefreshCw className={cn("h-4 w-4", bgRefreshing && "animate-spin")} aria-hidden="true" />
+              <span className="hidden sm:inline">{bgRefreshing ? "Loading…" : "New image"}</span>
+            </button>
+          )}
 
-          {/* Category switch */}
-          <div className="mt-4 flex items-center gap-2" role="group" aria-label="Search category">
-            {([
-              { key: "web" as const, label: "Web", icon: Globe },
-              { key: "images" as const, label: "Images", icon: ImageIcon },
-            ]).map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setCategory(key)}
-                aria-pressed={category === key}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  category === key
-                    ? bgUrl
-                      ? "bg-white/20 text-white border border-white/30"
-                      : "bg-primary text-primary-foreground"
-                    : bgUrl
-                      ? "text-white/60 hover:text-white hover:bg-white/10 border border-transparent"
-                      : "text-muted-foreground hover:bg-accent border border-transparent"
-                )}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                {label}
-              </button>
-            ))}
-          </div>
+          {/* Bottom-left: image source */}
+          {bgInfo?.source_url && bgUrl && (
+            <a
+              href={bgInfo.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-6 left-6 flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              Image source
+            </a>
+          )}
         </div>
-
-        {/* Bottom-right: new image button */}
-        {bgUrl && (
-          <button
-            onClick={handleRefreshBg}
-            disabled={bgRefreshing}
-            aria-label="New background image"
-            title="New background image"
-            className="absolute bottom-6 right-6 flex items-center gap-1.5 rounded-full border border-white/30 bg-black/20 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-black/30 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors backdrop-blur-sm"
-          >
-            <RefreshCw className={cn("h-4 w-4", bgRefreshing && "animate-spin")} aria-hidden="true" />
-            <span className="hidden sm:inline">{bgRefreshing ? "Loading…" : "New image"}</span>
-          </button>
-        )}
-
-        {/* Bottom-left: image source */}
-        {bgInfo?.source_url && bgUrl && (
-          <a
-            href={bgInfo.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute bottom-6 left-6 flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            Image source
-          </a>
-        )}
 
         {settingsModal}
       </div>

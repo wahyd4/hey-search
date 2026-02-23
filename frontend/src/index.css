@@ -4,7 +4,8 @@
 
 html, body {
   overflow-x: hidden;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
+  /* height: 100%; */
 }
 
 :root {
@@ -85,5 +86,10 @@ html, body {
   body {
     @apply bg-background text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  #root {
+    height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
