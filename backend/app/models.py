@@ -28,6 +28,8 @@ class ImageResult(BaseModel):
     source: str = ""
     engine: str = ""
     rank: int = 0
+    width: int = 0
+    height: int = 0
 
 
 class EngineError(BaseModel):

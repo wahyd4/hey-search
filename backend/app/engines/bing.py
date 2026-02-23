@@ -213,6 +213,8 @@ class BingEngine(SearchEngine):
                             thumbnail_src=thumb_url or img_url,
                             source="Bing",
                             engine=self.name,
+                            width=int(data.get("mw", 0) or 0),
+                            height=int(data.get("mh", 0) or 0),
                         )
                     )
             except _json.JSONDecodeError:

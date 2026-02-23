@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback, type MouseEvent } from "react";
 import type { ImageResult } from "@/lib/api";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
+function formatSize(w: number, h: number): string | null {
+  if (w > 0 && h > 0) return `${w}×${h}`;
+  return null;
+}
+
 interface ImageResultsProps {
   results: ImageResult[];
 }
@@ -71,7 +76,14 @@ export function ImageResults({ results }: ImageResultsProps) {
             {/* Hover overlay with title */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
               <p className="truncate text-xs text-white">{img.title}</p>
-              <p className="truncate text-[10px] text-white/60">{img.source}</p>
+              <div className="flex items-center gap-1">
+                <p className="truncate text-[10px] text-white/60">{img.source}</p>
+                {formatSize(img.width, img.height) && (
+                  <span className="ml-auto shrink-0 text-[10px] tabular-nums text-white/60">
+                    {formatSize(img.width, img.height)}
+                  </span>
+                )}
+              </div>
             </div>
           </a>
         ))}
@@ -127,6 +139,9 @@ export function ImageResults({ results }: ImageResultsProps) {
               <h3 className="font-medium">{selected.title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Source: {selected.source} • Engine: {selected.engine}
+                {formatSize(selected.width, selected.height) && (
+                  <> • {formatSize(selected.width, selected.height)}px</>
+                )}
                 <span className="ml-2 tabular-nums opacity-60">
                   {selectedIndex + 1} / {results.length}
                 </span>

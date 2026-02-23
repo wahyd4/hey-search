@@ -18,6 +18,8 @@ export interface ImageResult {
   source: string;
   engine: string;
   rank: number;
+  width: number;
+  height: number;
 }
 
 export interface EngineError {

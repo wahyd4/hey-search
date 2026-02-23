@@ -104,6 +104,8 @@ class DuckDuckGoEngine(SearchEngine):
                     thumbnail_src=item.get("thumbnail", ""),
                     source=item.get("source", ""),
                     engine=self.name,
+                    width=int(item.get("width", 0) or 0),
+                    height=int(item.get("height", 0) or 0),
                 ))
 
         return results
