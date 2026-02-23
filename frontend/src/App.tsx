@@ -268,6 +268,7 @@ function App() {
                   errors={response.errors}
                   page={page}
                   totalResults={response.results.length}
+                  initialCollapsed
                 />
               </div>
             )}

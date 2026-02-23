@@ -8,10 +8,11 @@ interface SearchStatsProps {
   errors: EngineError[];
   page: number;
   totalResults: number;
+  initialCollapsed?: boolean;
 }
 
-export function SearchStats({ stats, page, totalResults }: SearchStatsProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function SearchStats({ stats, page, totalResults, initialCollapsed = false }: SearchStatsProps) {
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
 
   if (stats.length === 0) return null;
 

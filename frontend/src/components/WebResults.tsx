@@ -26,7 +26,7 @@ export function WebResults({ results }: WebResultsProps) {
             href={result.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 block text-lg font-medium text-blue-600 hover:underline dark:text-blue-400 sm:text-xl"
+            className="mt-1 block text-lg font-medium text-blue-600 visited:text-purple-600 hover:underline dark:text-blue-400 dark:visited:text-purple-400 sm:text-xl"
           >
             {result.title}
             <ExternalLink className="mb-1 ml-1 inline h-3.5 w-3.5 opacity-0 group-hover:opacity-100" />
