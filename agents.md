@@ -106,11 +106,27 @@ docker build -t hey-search . && docker run -p 8000:8000 hey-search
 
 ## API Endpoints
 
-| Method | Path                       | Description              |
-| ------ | -------------------------- | ------------------------ |
-| GET    | `/api/search`              | Metasearch (web/images)  |
-| GET    | `/api/autocomplete`        | Search suggestions       |
-| GET    | `/api/engines`             | List engines             |
-| PUT    | `/api/engines/{name}`      | Toggle engine on/off     |
-| GET    | `/docs`                    | Swagger UI               |
-| GET    | `/redoc`                   | Redoc API docs           |
+| Method    | Path                       | Description              |
+| --------- | -------------------------- | ------------------------ |
+| GET, POST | `/api/search`              | Metasearch (web/images)  |
+| GET       | `/api/autocomplete`        | Search suggestions       |
+| GET       | `/api/engines`             | List engines             |
+| PUT       | `/api/engines/{name}`      | Toggle engine on/off     |
+| GET       | `/docs`                    | Swagger UI               |
+| GET       | `/redoc`                   | Redoc API docs           |
+
+#### `/api/search` query parameters
+
+| Parameter    | Default  | Description                                                    |
+| ------------ | -------- | -------------------------------------------------------------- |
+| `q`          | required | Search query string                                            |
+| `category`   | `web`    | `web` or `images`                                             |
+| `page`       | `1`      | Page number (1–50)                                             |
+| `pageNumber` | —        | Alias for `page` (takes precedence when provided)              |
+| `numResults` | —        | Requested result count hint (informational)                    |
+| `format`     | —        | Response format hint (e.g. `json`)                             |
+| `imageProxy` | —        | Client image-proxy preference flag (informational)             |
+| `safesearch` | —        | Safe search level: `0` off, `1` moderate, `2` strict           |
+| `engines`    | —        | Comma-separated engine names (e.g. `google,bing`)              |
+| `image_size` | —        | `large`, `medium`, or `small` (images only)                    |
+| `sort`       | `default`| `default`, `date_asc`, or `date_desc`                          |

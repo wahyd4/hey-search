@@ -21,6 +21,8 @@
 ## REST API
 
 - Full REST API for search, autocomplete, and engine management
+- `/api/search` accepts both **GET and POST** requests with query string parameters
+- Compatibility parameters on `/api/search`: `pageNumber` (alias for `page`), `numResults`, `format`, `imageProxy`, `safesearch`
 - OpenAPI specification with interactive docs via [Swagger UI](https://swagger.io/tools/swagger-ui/) (`/docs`) and [Redoc](https://github.com/Redocly/redoc) (`/redoc`)
 
 ## Engine Management
@@ -80,6 +82,8 @@
 ## REST API
 
 - Full REST API for search, autocomplete, and engine management
+- `/api/search` accepts both **GET and POST** requests with query string parameters
+- Compatibility parameters on `/api/search`: `pageNumber` (alias for `page`), `numResults`, `format`, `imageProxy`, `safesearch`
 - Every result includes `result_id`, `rank`, `engine`, and `timestamp` for agent integration
 - `has_next` and `total_results` fields for cursor-aware pagination
 - Standardized error schema (`code`/`message`/`details`/`retry_hint`) on all error responses

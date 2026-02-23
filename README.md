@@ -78,15 +78,31 @@ The `/app/data` volume stores the SQLite database (engine settings, excluded dom
 
 ## API Endpoints
 
-| Method | Path                        | Description                 |
-| ------ | --------------------------- | --------------------------- |
-| GET    | `/api/search?q=&category=`  | Search web or images        |
-| GET    | `/api/autocomplete?q=`      | Autocomplete suggestions    |
-| GET    | `/api/engines`              | List all search engines     |
-| PUT    | `/api/engines/{name}`       | Enable/disable an engine    |
-| GET    | `/api/settings`             | Get app settings (cache TTL)|
-| PUT    | `/api/settings`             | Update settings             |
-| DELETE | `/api/cache`                | Flush search cache          |
+| Method     | Path                        | Description                 |
+| ---------- | --------------------------- | --------------------------- |
+| GET, POST  | `/api/search`               | Search web or images        |
+| GET        | `/api/autocomplete?q=`      | Autocomplete suggestions    |
+| GET        | `/api/engines`              | List all search engines     |
+| PUT        | `/api/engines/{name}`       | Enable/disable an engine    |
+| GET        | `/api/settings`             | Get app settings (cache TTL)|
+| PUT        | `/api/settings`             | Update settings             |
+| DELETE     | `/api/cache`                | Flush search cache          |
+
+### Search endpoint parameters
+
+| Parameter    | Default  | Description                                          |
+| ------------ | -------- | ---------------------------------------------------- |
+| `q`          | required | Search query string                                  |
+| `category`   | `web`    | `web` or `images`                                    |
+| `page`       | `1`      | Page number (1–50)                                   |
+| `pageNumber` | —        | Alias for `page` (takes precedence when provided)    |
+| `numResults` | —        | Requested result count hint (informational)          |
+| `format`     | —        | Response format hint (e.g. `json`)                   |
+| `imageProxy` | —        | Client image-proxy preference flag (informational)   |
+| `safesearch` | —        | Safe search level: `0` off, `1` moderate, `2` strict |
+| `engines`    | —        | Comma-separated engine names to restrict (e.g. `google,bing`) |
+| `image_size` | —        | `large`, `medium`, or `small` (images only)          |
+| `sort`       | `default`| `default`, `date_asc`, or `date_desc`                |
 
 ## Features
 

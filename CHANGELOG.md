@@ -1,6 +1,17 @@
 # Changelog
 
-## 1.8.0
+## 1.8.1
+
+### Added
+
+- **POST support on `/api/search`** — the search endpoint now accepts both GET and POST requests, enabling compatibility with clients that send search queries via POST
+- **Compatibility query parameters** on `/api/search`:
+  - `pageNumber` — alias for `page` (takes precedence when both are provided)
+  - `numResults` — requested result count hint (accepted and ignored; backend controls pagination)
+  - `format` — response format hint (e.g. `json`)
+  - `imageProxy` — client image-proxy preference flag (informational)
+  - `safesearch` — safe search level (`0` off, `1` moderate, `2` strict; accepted for compatibility)
+
 
 ### Added
 
