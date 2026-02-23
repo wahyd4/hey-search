@@ -7,6 +7,13 @@
 - **Pinterest-style masonry image layout** — images display at their natural aspect ratios using CSS columns, creating a dynamic waterfall grid instead of fixed-size squares
 - **Image size filter** — filter image results by size (All, Large, Medium, Small); passed to search engines server-side (Google `tbs=isz`, Bing `qft=filterui:imagesize`, DuckDuckGo `size` param)
 - Image size filter state is synced in the URL (`&image_size=large`)
+- **Lightbox navigation** — left/right arrow buttons and keyboard arrow keys to browse images; Escape to close; position counter (e.g. "3 / 70")
+- **Visited link styling** — clicked web result links turn purple to distinguish from unvisited links
+
+### Fixed
+
+- Settings modal now properly constrained to viewport on mobile (`max-h-[90vh]`) with scrollable content area and pinned footer
+- Search stats section defaults to collapsed on mobile to save screen space
 
 ## 1.2.0
 

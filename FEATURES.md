@@ -3,7 +3,7 @@
 ## Search
 
 - **Web search** — aggregates results from Brave, DuckDuckGo, Google, and Bing concurrently
-- **Image search** — Pinterest-style masonry layout respecting natural image aspect ratios, with lightbox viewer
+- **Image search** — Pinterest-style masonry layout respecting natural image aspect ratios, with lightbox viewer and keyboard navigation (←/→ to browse, Escape to close)
 - **Image size filter** — filter images by size (Large, Medium, Small) — applied server-side across all engines
 - **Autocomplete** — live search suggestions as you type (cascades Google → DuckDuckGo → Brave)
 - **Pagination** — navigate through result pages; URL reflects current state (`?q=...&page=2`)
@@ -41,7 +41,8 @@
 - **Mobile-first** responsive design built with React, Tailwind CSS, and shadcn theming
 - Clean search home page with branded gradient header
 - Web results show favicons, engine badges, and content snippets
-- Image results displayed in a responsive grid with hover previews and a full lightbox
+- Image results displayed in a masonry grid with hover previews and a full lightbox with arrow-key navigation
+- **Visited link colors** — clicked links turn purple to distinguish from unvisited results
 - Engine settings modal with toggle switches
 - Excluded domains management modal with add/remove UI
 - **Unified settings modal** — single Settings button opens a tabbed modal (Engines, Excluded Sites)
