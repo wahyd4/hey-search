@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- **Accessibility overhaul (P0)**
+  - Image result cards are now real `<a>` links — supports open-in-new-tab, Cmd/Ctrl-click, and copy-link
+  - `aria-label` on all icon-only buttons (settings, clear, close, lightbox nav, engine toggles, domain remove, pagination arrows, error dismiss)
+  - Search input has proper semantics: `<label>`, `name="q"`, `type="search"`, `role="combobox"`, `aria-autocomplete`, `aria-expanded`, `aria-activedescendant`
+  - Autocomplete list uses `role="listbox"` and `role="option"` with `aria-selected`
+  - Visible keyboard focus (`focus-visible:ring-2`) on all interactive elements; removed bare `outline-none`
+- **Page structure (P1)**
+  - "Skip to main content" link for keyboard users
+  - Proper heading hierarchy (`h1` on home, `h2` for results/no-results, `sr-only` screen-reader headings)
+  - `<nav>` landmarks for category tabs and pagination, `<aside>` for stats sidebar
+- **Live announcements (P1)**
+  - `aria-live="polite"` region announces loading state and result counts to screen readers
+  - `aria-live="assertive"` on error toast for immediate announcement
+  - Loading spinner has `role="status"` with `sr-only` text
+- **Custom favicon** — search magnifying glass SVG replaces default Vite favicon (eliminates 404 console errors)
+- **Agent-friendly API response (P2)**
+  - Every result now includes `result_id` (stable unique ID), `rank` (position in result list), and `engine`
+  - `SearchResponse` includes `timestamp` (ISO 8601), `total_results`, and `has_next` for cursor-based pagination
+  - `EngineError` includes `code`, `details`, and `retry_hint` fields
+  - New `APIError` standard error model (`code`/`message`/`details`/`retry_hint`) used on all error responses
+  - Standardized 404 errors on engine and domain endpoints with consistent JSON schema
+- **API documentation (P2)**
+  - All API endpoints include copy-paste `curl` examples and sample JSON responses in OpenAPI descriptions
+  - API version bumped to 1.4.0 with descriptive title
+- **Rate-limit headers (P2)**
+  - `X-Response-Time-Ms` and `X-RateLimit-Limit`/`X-RateLimit-Remaining` headers on all responses
+  - Global exception handler returns standardized `APIError` JSON for unhandled errors
+- **URL state (P2)**
+  - `engines` parameter supported in URL for reproducible sessions (`?q=hello&engines=google,bing`)
+- Settings modal, lightbox, and category tabs all have `role="dialog"`, `aria-modal`, `aria-expanded`, `aria-pressed`, and `aria-current` where appropriate
+
 ## 1.3.0
 
 ### Added

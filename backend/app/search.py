@@ -44,13 +44,13 @@ async def _search_single_engine(
         return results, None
     except asyncio.TimeoutError:
         logger.warning("Engine %s timed out for query '%s'", engine.name, query)
-        return [], EngineError(engine=engine.name, message="Search timed out", is_timeout=True)
+        return [], EngineError(engine=engine.name, message="Search timed out", is_timeout=True, code="timeout", retry_hint="Try again or increase timeout")
     except httpx.HTTPStatusError as e:
         logger.warning("Engine %s HTTP error: %s", engine.name, e)
-        return [], EngineError(engine=engine.name, message=f"HTTP {e.response.status_code}")
+        return [], EngineError(engine=engine.name, message=f"HTTP {e.response.status_code}", code="http_error", details=str(e))
     except Exception as e:
         logger.warning("Engine %s error: %s", engine.name, e)
-        return [], EngineError(engine=engine.name, message=str(e))
+        return [], EngineError(engine=engine.name, message=str(e), code="engine_error", retry_hint="Try again later")
 
 
 async def search(
@@ -114,6 +114,10 @@ async def search(
             seen_urls.add(r.url)
             unique_results.append(r)
 
+    # Assign final ranks
+    for i, r in enumerate(unique_results):
+        r.rank = i + 1
+
     return SearchResponse(
         query=query,
         category=category,
@@ -121,6 +125,8 @@ async def search(
         results=unique_results,
         errors=all_errors,
         engine_stats=all_stats,
+        total_results=len(unique_results),
+        has_next=any(s.result_count > 0 for s in all_stats if s.status == "ok"),
     )
 
 

@@ -23,10 +23,12 @@ export function SearchStats({ stats, page, totalResults, initialCollapsed = fals
       {/* Header — always visible, acts as toggle */}
       <button
         onClick={() => setCollapsed((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        aria-expanded={!collapsed}
+        aria-label="Toggle search stats"
+        className="flex w-full items-center justify-between px-4 py-3 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-xl"
       >
         <span className="flex items-center gap-2 text-sm font-semibold">
-          <BarChart3 className="h-4 w-4" />
+          <BarChart3 className="h-4 w-4" aria-hidden="true" />
           Search Stats
         </span>
         <span className="flex items-center gap-2">

@@ -18,7 +18,7 @@ export function ErrorToast({ errors }: ErrorToastProps) {
   if (!errors.length || !visible) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm space-y-2">
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm space-y-2" role="alert" aria-live="assertive">
       {errors.map((err, i) => (
         <div
           key={`${err.engine}-${i}`}
@@ -29,7 +29,7 @@ export function ErrorToast({ errors }: ErrorToastProps) {
             <p className="font-medium">{err.engine} failed</p>
             <p className="text-muted-foreground">{err.message}</p>
           </div>
-          <button onClick={() => setVisible(false)} className="text-muted-foreground hover:text-foreground">
+          <button onClick={() => setVisible(false)} aria-label="Dismiss error" className="text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded">
             <X className="h-4 w-4" />
           </button>
         </div>

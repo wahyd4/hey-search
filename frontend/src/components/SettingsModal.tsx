@@ -22,7 +22,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Settings" onClick={onClose}>
       <div className="fixed inset-0 bg-black/50" />
       <div
         className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl bg-card shadow-2xl sm:max-h-[80vh] sm:rounded-2xl"
@@ -34,7 +34,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
             <Settings className="h-5 w-5" />
             Settings
           </h2>
-          <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} aria-label="Close settings" className="text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded">
             Done
           </button>
         </div>
@@ -49,7 +49,7 @@ export function SettingsModal({ open, onClose, initialTab = "engines" }: Setting
               key={key}
               onClick={() => setTab(key)}
               className={cn(
-                "relative px-4 py-3 text-sm font-medium transition-colors",
+                "relative px-4 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 tab === key
                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -122,7 +122,7 @@ function EnginesTab() {
                 .join(" · ")}
             </p>
           </div>
-          <button onClick={() => handleToggle(engine.name, !engine.enabled)} className="text-foreground">
+          <button onClick={() => handleToggle(engine.name, !engine.enabled)} className="text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded" aria-label={`${engine.enabled ? "Disable" : "Enable"} ${engine.display_name}`}>
             {engine.enabled ? (
               <ToggleRight className="h-8 w-8 text-green-500" />
             ) : (
@@ -184,12 +184,13 @@ function ExcludedTab() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="e.g. example.com"
-          className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <button
           type="submit"
           disabled={!input.trim()}
-          className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-80 disabled:opacity-40"
+          aria-label="Add domain"
+          className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-80 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -210,7 +211,8 @@ function ExcludedTab() {
               <span className="truncate font-mono text-sm">{domain}</span>
               <button
                 onClick={() => handleRemove(domain)}
-                className="ml-2 shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                aria-label={`Remove ${domain}`}
+                className="ml-2 shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

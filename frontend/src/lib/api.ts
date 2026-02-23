@@ -1,25 +1,32 @@
 const API_BASE = "/api";
 
 export interface WebResult {
+  result_id: string;
   title: string;
   url: string;
   content: string;
   engine: string;
+  rank: number;
 }
 
 export interface ImageResult {
+  result_id: string;
   title: string;
   url: string;
   img_src: string;
   thumbnail_src: string;
   source: string;
   engine: string;
+  rank: number;
 }
 
 export interface EngineError {
   engine: string;
   message: string;
   is_timeout: boolean;
+  code: string;
+  details: string;
+  retry_hint: string;
 }
 
 export interface EngineStat {
@@ -38,6 +45,9 @@ export interface SearchResponse {
   errors: EngineError[];
   suggestions: string[];
   engine_stats: EngineStat[];
+  timestamp: string;
+  total_results: number;
+  has_next: boolean;
 }
 
 export interface EngineInfo {

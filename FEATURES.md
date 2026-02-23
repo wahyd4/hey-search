@@ -49,6 +49,27 @@
 - Keyboard navigation for autocomplete suggestions (↑↓ arrows, Enter, Escape)
 - Footer with link to interactive API documentation (Swagger UI)
 
+## Accessibility
+
+- **Skip to main content** link for keyboard users
+- Image cards are real `<a>` links (Cmd/Ctrl-click, right-click, open-in-new-tab)
+- `aria-label` on all icon-only buttons and interactive elements
+- Search input with `<label>`, `name`, `type="search"`, and ARIA combobox pattern
+- Visible `focus-visible` ring on all focusable elements
+- `aria-live` regions for loading/results/error announcements
+- Proper heading hierarchy (`h1`/`h2`) and landmark elements (`<nav>`, `<main>`, `<aside>`)
+- Dialog semantics on modals and lightbox (`role="dialog"`, `aria-modal`)
+
+## REST API
+
+- Full REST API for search, autocomplete, and engine management
+- Every result includes `result_id`, `rank`, `engine`, and `timestamp` for agent integration
+- `has_next` and `total_results` fields for cursor-aware pagination
+- Standardized error schema (`code`/`message`/`details`/`retry_hint`) on all error responses
+- `X-Response-Time-Ms` and rate-limit headers on all responses
+- Copy-paste `curl` examples in OpenAPI docs for every endpoint
+- OpenAPI specification with interactive docs via [Swagger UI](https://swagger.io/tools/swagger-ui/) (`/docs`) and [Redoc](https://github.com/Redocly/redoc) (`/redoc`)
+
 ## Deployment
 
 - **Docker** — multi-stage Dockerfile: Node.js frontend build → Python production image

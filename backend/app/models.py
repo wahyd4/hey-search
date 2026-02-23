@@ -2,25 +2,32 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime, timezone
+
 from pydantic import BaseModel, Field
 
 
 class WebResult(BaseModel):
     """A single web search result."""
+    result_id: str = Field(default_factory=lambda: uuid.uuid4().hex[:12])
     title: str
     url: str
     content: str = ""
     engine: str = ""
+    rank: int = 0
 
 
 class ImageResult(BaseModel):
     """A single image search result."""
+    result_id: str = Field(default_factory=lambda: uuid.uuid4().hex[:12])
     title: str
     url: str
     img_src: str
     thumbnail_src: str = ""
     source: str = ""
     engine: str = ""
+    rank: int = 0
 
 
 class EngineError(BaseModel):
@@ -28,6 +35,9 @@ class EngineError(BaseModel):
     engine: str
     message: str
     is_timeout: bool = False
+    code: str = "engine_error"
+    details: str = ""
+    retry_hint: str = ""
 
 
 class EngineStat(BaseModel):
@@ -48,6 +58,9 @@ class SearchResponse(BaseModel):
     errors: list[EngineError] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
     engine_stats: list[EngineStat] = Field(default_factory=list)
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    total_results: int = 0
+    has_next: bool = True
 
 
 class EngineInfo(BaseModel):
@@ -57,3 +70,11 @@ class EngineInfo(BaseModel):
     enabled: bool = True
     supports_web: bool = True
     supports_images: bool = True
+
+
+class APIError(BaseModel):
+    """Standard error response."""
+    code: str
+    message: str
+    details: str = ""
+    retry_hint: str = ""

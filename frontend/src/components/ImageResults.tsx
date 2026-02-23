@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type MouseEvent } from "react";
 import type { ImageResult } from "@/lib/api";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -33,17 +33,28 @@ export function ImageResults({ results }: ImageResultsProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedIndex, goPrev, goNext, close]);
 
+  // Open lightbox on click, but allow Cmd/Ctrl-click to open link natively
+  const handleCardClick = (e: MouseEvent, i: number) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // let browser handle
+    e.preventDefault();
+    setSelectedIndex(i);
+  };
+
   if (results.length === 0) return null;
 
   return (
     <>
       {/* Masonry grid using CSS columns */}
-      <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5">
+      <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5" role="list">
         {results.map((img, i) => (
-          <button
+          <a
             key={`${img.img_src}-${i}`}
-            onClick={() => setSelectedIndex(i)}
-            className="group relative mb-3 inline-block w-full overflow-hidden rounded-lg border bg-muted break-inside-avoid hover:ring-2 hover:ring-ring transition-shadow"
+            href={img.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            role="listitem"
+            onClick={(e) => handleCardClick(e, i)}
+            className="group relative mb-3 inline-block w-full overflow-hidden rounded-lg border bg-muted break-inside-avoid hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-shadow"
           >
             <img
               src={img.thumbnail_src || img.img_src}
@@ -62,7 +73,7 @@ export function ImageResults({ results }: ImageResultsProps) {
               <p className="truncate text-xs text-white">{img.title}</p>
               <p className="truncate text-[10px] text-white/60">{img.source}</p>
             </div>
-          </button>
+          </a>
         ))}
       </div>
 
@@ -70,13 +81,17 @@ export function ImageResults({ results }: ImageResultsProps) {
       {selected && selectedIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-label={`Image viewer: ${selected.title}`}
+          aria-modal="true"
           onClick={close}
         >
           {/* Prev button */}
           <button
             onClick={(e) => { e.stopPropagation(); goPrev(); }}
             disabled={selectedIndex <= 0}
-            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 p-2 text-foreground shadow-lg hover:bg-background disabled:pointer-events-none disabled:opacity-30 sm:left-4"
+            aria-label="Previous image"
+            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 p-2 text-foreground shadow-lg hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30 sm:left-4"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -85,7 +100,8 @@ export function ImageResults({ results }: ImageResultsProps) {
           <button
             onClick={(e) => { e.stopPropagation(); goNext(); }}
             disabled={selectedIndex >= results.length - 1}
-            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 p-2 text-foreground shadow-lg hover:bg-background disabled:pointer-events-none disabled:opacity-30 sm:right-4"
+            aria-label="Next image"
+            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 p-2 text-foreground shadow-lg hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30 sm:right-4"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
@@ -96,7 +112,8 @@ export function ImageResults({ results }: ImageResultsProps) {
           >
             <button
               onClick={close}
-              className="absolute right-2 top-2 z-10 rounded-full bg-background/80 p-1.5 hover:bg-background"
+              aria-label="Close lightbox"
+              className="absolute right-2 top-2 z-10 rounded-full bg-background/80 p-1.5 hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <X className="h-5 w-5" />
             </button>
@@ -118,7 +135,7 @@ export function ImageResults({ results }: ImageResultsProps) {
                 href={selected.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
+                className="mt-2 inline-block text-sm text-blue-600 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-blue-400"
               >
                 Visit page →
               </a>
