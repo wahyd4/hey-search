@@ -251,6 +251,58 @@ function App() {
           </div>
         )}
 
+        {/* Top-right: settings + nav menu */}
+        <div className="absolute top-4 right-4 flex items-center gap-1">
+          <button
+            onClick={handleShowBookmarks}
+            aria-label="Bookmarks"
+            title="Bookmarks"
+            className={cn(
+              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              bgUrl ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
+            )}
+          >
+            <BookmarkIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            onClick={handleShowGallery}
+            aria-label="Background gallery"
+            title="Backgrounds"
+            className={cn(
+              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              bgUrl ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
+            )}
+          >
+            <Images className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <a
+            href="/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="API Docs"
+            title="API Docs"
+            className={cn(
+              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              bgUrl ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
+            )}
+          >
+            <ExternalLink className="h-5 w-5" aria-hidden="true" />
+          </a>
+          <div className={cn("mx-1 h-5 w-px", bgUrl ? "bg-white/20" : "bg-border")} aria-hidden="true" />
+          <button
+            onClick={() => setShowSettings(true)}
+            aria-label="Open settings"
+            title="Settings"
+            className={cn(
+              "rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              bgUrl ? "text-white/80 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:bg-accent"
+            )}
+          >
+            <Settings className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Center content */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             <span className={cn(
@@ -267,77 +319,61 @@ function App() {
           </p>
         </div>
 
-        <SearchBar onSearch={(q) => doSearch(q)} className="w-full" />
+        <SearchBar onSearch={(q) => doSearch(q, category)} className="w-full" />
 
-        <div className="mt-6 flex items-center gap-3">
-          <button
-            onClick={() => setShowSettings(true)}
-            aria-label="Open settings"
-            className={cn(
-              "flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              bgUrl ? "border-white/30 text-white/80 hover:text-white" : "text-muted-foreground"
-            )}
-          >
-            <Settings className="h-4 w-4" aria-hidden="true" /> Settings
-          </button>
-          {bgUrl && (
+        {/* Category switch */}
+        <div className="mt-4 flex items-center gap-2" role="group" aria-label="Search category">
+          {([
+            { key: "web" as const, label: "Web", icon: Globe },
+            { key: "images" as const, label: "Images", icon: ImageIcon },
+          ]).map(({ key, label, icon: Icon }) => (
             <button
-              onClick={handleRefreshBg}
-              disabled={bgRefreshing}
-              aria-label="New background image"
-              className="flex items-center gap-1.5 rounded-full border border-white/30 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-accent/20 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              key={key}
+              onClick={() => setCategory(key)}
+              aria-pressed={category === key}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                category === key
+                  ? bgUrl
+                    ? "bg-white/20 text-white border border-white/30"
+                    : "bg-primary text-primary-foreground"
+                  : bgUrl
+                    ? "text-white/60 hover:text-white hover:bg-white/10 border border-transparent"
+                    : "text-muted-foreground hover:bg-accent border border-transparent"
+              )}
             >
-              <RefreshCw className={cn("h-4 w-4", bgRefreshing && "animate-spin")} aria-hidden="true" />
-              {bgRefreshing ? "Loading…" : "New image"}
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              {label}
             </button>
-          )}
+          ))}
         </div>
 
-        <footer className={cn("absolute bottom-6 flex flex-wrap justify-center items-center gap-4", bgUrl ? "text-white/60" : "")}>
-          {bgInfo?.source_url && bgUrl && (
-            <a
-              href={bgInfo.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
-            >
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-              Image source
-            </a>
-          )}
+        {/* Bottom-right: new image button */}
+        {bgUrl && (
+          <button
+            onClick={handleRefreshBg}
+            disabled={bgRefreshing}
+            aria-label="New background image"
+            title="New background image"
+            className="absolute bottom-6 right-6 flex items-center gap-1.5 rounded-full border border-white/30 bg-black/20 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-black/30 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors backdrop-blur-sm"
+          >
+            <RefreshCw className={cn("h-4 w-4", bgRefreshing && "animate-spin")} aria-hidden="true" />
+            <span className="hidden sm:inline">{bgRefreshing ? "Loading…" : "New image"}</span>
+          </button>
+        )}
+
+        {/* Bottom-left: image source */}
+        {bgInfo?.source_url && bgUrl && (
           <a
-            href="/docs"
+            href={bgInfo.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              "flex items-center gap-1.5 text-xs hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors",
-              bgUrl ? "text-white/60 hover:text-white" : "text-muted-foreground"
-            )}
+            className="absolute bottom-6 left-6 flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            API Docs
+            Image source
           </a>
-          <button
-            onClick={handleShowGallery}
-            className={cn(
-              "flex items-center gap-1.5 text-xs hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors",
-              bgUrl ? "text-white/60 hover:text-white" : "text-muted-foreground"
-            )}
-          >
-            <Images className="h-3.5 w-3.5" aria-hidden="true" />
-            Backgrounds
-          </button>
-          <button
-            onClick={handleShowBookmarks}
-            className={cn(
-              "flex items-center gap-1.5 text-xs hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors",
-              bgUrl ? "text-white/60 hover:text-white" : "text-muted-foreground"
-            )}
-          >
-            <BookmarkIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Bookmarks
-          </button>
-        </footer>
+        )}
 
         <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       </div>
