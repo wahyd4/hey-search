@@ -180,12 +180,14 @@ export async function flushCache(): Promise<{ keys_deleted: number; message: str
 export interface BackgroundInfo {
   filename: string | null;
   url: string | null;
+  source_url: string | null;
   enabled: boolean;
 }
 
 export interface BackgroundListItem {
   filename: string;
   url: string;
+  source_url: string;
   size_bytes: number;
   created_at: number;
 }

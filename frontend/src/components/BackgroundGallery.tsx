@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, ExternalLink } from "lucide-react";
 import { listBackgrounds, type BackgroundListItem } from "@/lib/api";
 
 interface BackgroundGalleryProps {
@@ -91,9 +91,23 @@ export function BackgroundGallery({ onBack }: BackgroundGalleryProps) {
                     minute: "2-digit",
                   })}
                 </p>
-                <p className="text-[10px] text-white/60">
-                  {(img.size_bytes / 1024).toFixed(0)} KB
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] text-white/60">
+                    {(img.size_bytes / 1024).toFixed(0)} KB
+                  </p>
+                  {img.source_url && (
+                    <a
+                      href={img.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="ml-auto flex items-center gap-1 text-[10px] text-white/70 hover:text-white transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Source
+                    </a>
+                  )}
+                </div>
               </div>
             </a>
           ))}

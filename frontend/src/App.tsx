@@ -243,7 +243,18 @@ function App() {
           )}
         </div>
 
-        <footer className={cn("absolute bottom-6 flex items-center gap-4", bgUrl ? "text-white/60" : "")}>
+        <footer className={cn("absolute bottom-6 flex flex-wrap justify-center items-center gap-4", bgUrl ? "text-white/60" : "")}>
+          {bgInfo?.source_url && bgUrl && (
+            <a
+              href={bgInfo.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              Image source
+            </a>
+          )}
           <a
             href="/docs"
             target="_blank"

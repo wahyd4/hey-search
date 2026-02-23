@@ -341,12 +341,14 @@ from app.background import get_current_background, fetch_new_background, list_ba
 class BackgroundResponse(BaseModel):
     filename: str | None = None
     url: str | None = None
+    source_url: str | None = None
     enabled: bool = True
 
 
 class BackgroundListItem(BaseModel):
     filename: str
     url: str
+    source_url: str = ""
     size_bytes: int
     created_at: float
 
@@ -362,9 +364,14 @@ async def api_get_background():
     enabled = is_background_enabled()
     if not enabled:
         return BackgroundResponse(enabled=False)
-    filename = await get_current_background()
-    if filename:
-        return BackgroundResponse(filename=filename, url=f"/api/backgrounds/{filename}", enabled=True)
+    info = await get_current_background()
+    if info:
+        return BackgroundResponse(
+            filename=info["filename"],
+            url=f"/api/backgrounds/{info['filename']}",
+            source_url=info.get("source_url", ""),
+            enabled=True,
+        )
     return BackgroundResponse(enabled=True)
 
 
@@ -375,9 +382,14 @@ async def api_get_background():
     tags=["Background"],
 )
 async def api_refresh_background():
-    filename = await fetch_new_background()
-    if filename:
-        return BackgroundResponse(filename=filename, url=f"/api/backgrounds/{filename}", enabled=True)
+    info = await fetch_new_background()
+    if info:
+        return BackgroundResponse(
+            filename=info["filename"],
+            url=f"/api/backgrounds/{info['filename']}",
+            source_url=info.get("source_url", ""),
+            enabled=True,
+        )
     return JSONResponse(status_code=502, content={"code": "fetch_failed", "message": "Could not fetch background image"})
 
 
@@ -398,6 +410,7 @@ async def api_list_backgrounds(
         BackgroundListItem(
             filename=b["filename"],
             url=f"/api/backgrounds/{b['filename']}",
+            source_url=b.get("source_url", ""),
             size_bytes=b["size_bytes"],
             created_at=b["created_at"],
         )
