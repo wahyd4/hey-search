@@ -56,9 +56,11 @@ export interface AutocompleteResponse {
 export async function search(
   query: string,
   category: "web" | "images" = "web",
-  page: number = 1
+  page: number = 1,
+  imageSize: string = ""
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ q: query, category, page: String(page) });
+  if (imageSize) params.set("image_size", imageSize);
   const resp = await fetch(`${API_BASE}/search?${params}`);
   if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
   return resp.json();

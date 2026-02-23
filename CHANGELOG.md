@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- **Pinterest-style masonry image layout** — images display at their natural aspect ratios using CSS columns, creating a dynamic waterfall grid instead of fixed-size squares
+- **Image size filter** — filter image results by size (All, Large, Medium, Small); passed to search engines server-side (Google `tbs=isz`, Bing `qft=filterui:imagesize`, DuckDuckGo `size` param)
+- Image size filter state is synced in the URL (`&image_size=large`)
+
 ## 1.2.0
 
 ### Changed

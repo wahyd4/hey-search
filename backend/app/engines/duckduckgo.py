@@ -54,7 +54,7 @@ class DuckDuckGoEngine(SearchEngine):
 
         return results
 
-    async def search_images(self, query: str, page: int = 1) -> list[ImageResult]:
+    async def search_images(self, query: str, page: int = 1, image_size: str = "") -> list[ImageResult]:
         """Search images via DDG's i.js API (requires vqd token)."""
         client = get_http_client()
         # First get a vqd token from the HTML page
@@ -84,8 +84,14 @@ class DuckDuckGoEngine(SearchEngine):
         if not vqd:
             return results
 
+        img_params: dict[str, str] = {"q": query, "vqd": vqd, "o": "json"}
+        # DuckDuckGo size filter
+        size_map = {"large": "Large", "medium": "Medium", "small": "Small"}
+        if image_size in size_map:
+            img_params["size"] = size_map[image_size]
+
         img_resp = await client.get(
-            f"https://duckduckgo.com/i.js?{urlencode({'q': query, 'vqd': vqd, 'o': 'json'})}",
+            f"https://duckduckgo.com/i.js?{urlencode(img_params)}",
             headers={"Referer": "https://duckduckgo.com/"},
         )
         if img_resp.is_success:

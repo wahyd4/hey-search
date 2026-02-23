@@ -3,7 +3,8 @@
 ## Search
 
 - **Web search** — aggregates results from Brave, DuckDuckGo, Google, and Bing concurrently
-- **Image search** — image results with a responsive grid layout and lightbox viewer
+- **Image search** — Pinterest-style masonry layout respecting natural image aspect ratios, with lightbox viewer
+- **Image size filter** — filter images by size (Large, Medium, Small) — applied server-side across all engines
 - **Autocomplete** — live search suggestions as you type (cascades Google → DuckDuckGo → Brave)
 - **Pagination** — navigate through result pages; URL reflects current state (`?q=...&page=2`)
 - **URL deduplication** — duplicate results from multiple engines are merged automatically

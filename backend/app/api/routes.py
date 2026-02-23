@@ -28,9 +28,10 @@ async def api_search(
     category: Literal["web", "images"] = Query("web", description="Search category"),
     page: int = Query(1, ge=1, le=50, description="Page number"),
     engines: str | None = Query(None, description="Comma-separated engine names to use"),
+    image_size: Literal["", "large", "medium", "small"] = Query("", description="Filter images by size (images category only)"),
 ):
     engine_list = [e.strip() for e in engines.split(",")] if engines else None
-    return await search(q, category=category, page=page, engines=engine_list)
+    return await search(q, category=category, page=page, engines=engine_list, image_size=image_size)
 
 
 # --- Autocomplete ---

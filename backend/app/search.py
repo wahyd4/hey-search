@@ -29,13 +29,14 @@ async def _search_single_engine(
     query: str,
     category: SearchCategory,
     page: int,
+    image_size: str = "",
 ) -> tuple[list[WebResult] | list[ImageResult], EngineError | None]:
     """Search a single engine with retry logic."""
 
     @RETRY_DECORATOR
     async def _do_search():
         if category == "images":
-            return await engine.search_images(query, page)
+            return await engine.search_images(query, page, image_size=image_size)
         return await engine.search_web(query, page)
 
     try:
@@ -57,6 +58,7 @@ async def search(
     category: SearchCategory = "web",
     page: int = 1,
     engines: list[str] | None = None,
+    image_size: str = "",
 ) -> SearchResponse:
     """Search across all enabled engines concurrently."""
     enabled_engines = registry.get_enabled_engines()
@@ -75,7 +77,7 @@ async def search(
 
     # Run all engine searches concurrently
     tasks = [
-        _search_single_engine(engine, query, category, page)
+        _search_single_engine(engine, query, category, page, image_size=image_size)
         for engine in enabled_engines
     ]
     results_list = await asyncio.gather(*tasks)

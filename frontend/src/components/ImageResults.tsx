@@ -13,25 +13,30 @@ export function ImageResults({ results }: ImageResultsProps) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      {/* Masonry grid using CSS columns */}
+      <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5">
         {results.map((img, i) => (
           <button
             key={`${img.img_src}-${i}`}
             onClick={() => setSelected(img)}
-            className="group relative aspect-square overflow-hidden rounded-lg border bg-muted hover:ring-2 hover:ring-ring"
+            className="group relative mb-3 inline-block w-full overflow-hidden rounded-lg border bg-muted break-inside-avoid hover:ring-2 hover:ring-ring transition-shadow"
           >
             <img
               src={img.thumbnail_src || img.img_src}
               alt={img.title}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              referrerPolicy="no-referrer"
+              className="w-full object-cover transition-transform group-hover:scale-[1.03]"
               onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23eee' width='100' height='100'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='%23999' font-size='12'%3ENo image%3C/text%3E%3C/svg%3E";
+                const el = e.target as HTMLImageElement;
+                el.src =
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect fill='%23eee' width='200' height='150'/%3E%3Ctext x='100' y='80' text-anchor='middle' fill='%23999' font-size='12'%3ENo image%3C/text%3E%3C/svg%3E";
               }}
             />
+            {/* Hover overlay with title */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
               <p className="truncate text-xs text-white">{img.title}</p>
+              <p className="truncate text-[10px] text-white/60">{img.source}</p>
             </div>
           </button>
         ))}
@@ -56,6 +61,7 @@ export function ImageResults({ results }: ImageResultsProps) {
             <img
               src={selected.img_src}
               alt={selected.title}
+              referrerPolicy="no-referrer"
               className="max-h-[70vh] w-auto rounded object-contain"
             />
             <div className="mt-3">

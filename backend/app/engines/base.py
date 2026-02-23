@@ -50,8 +50,11 @@ class SearchEngine(abc.ABC):
         """Perform a web search and return results."""
 
     @abc.abstractmethod
-    async def search_images(self, query: str, page: int = 1) -> list[ImageResult]:
-        """Perform an image search and return results."""
+    async def search_images(self, query: str, page: int = 1, image_size: str = "") -> list[ImageResult]:
+        """Perform an image search and return results.
+        
+        image_size: "" (all), "large", "medium", "small"
+        """
 
     async def autocomplete(self, query: str) -> list[str]:
         """Return autocomplete suggestions. Override if supported."""

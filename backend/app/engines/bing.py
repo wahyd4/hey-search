@@ -86,9 +86,9 @@ class BingEngine(SearchEngine):
         logger.info("Bing direct blocked — falling back to Yahoo for '%s'", query)
         return await self._yahoo_web(query, page)
 
-    async def search_images(self, query: str, page: int = 1) -> list[ImageResult]:
+    async def search_images(self, query: str, page: int = 1, image_size: str = "") -> list[ImageResult]:
         # Try direct Bing first
-        results = await self._bing_direct_images(query, page)
+        results = await self._bing_direct_images(query, page, image_size)
         if results is not None:
             return results
 
@@ -163,10 +163,14 @@ class BingEngine(SearchEngine):
 
         return results
 
-    async def _bing_direct_images(self, query: str, page: int) -> list[ImageResult] | None:
+    async def _bing_direct_images(self, query: str, page: int, image_size: str = "") -> list[ImageResult] | None:
         """Search Bing Images directly. Returns None if blocked."""
         first = (page - 1) * 35 + 1
-        params = {"q": query, "first": first, "FORM": "HDRSC2"}
+        params: dict[str, str | int] = {"q": query, "first": first, "FORM": "HDRSC2"}
+        # Bing size filter
+        size_map = {"large": "+filterui:imagesize-large", "medium": "+filterui:imagesize-medium", "small": "+filterui:imagesize-small"}
+        if image_size in size_map:
+            params["qft"] = size_map[image_size]
 
         client = get_http_client()
         try:

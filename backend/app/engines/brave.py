@@ -52,8 +52,12 @@ class BraveEngine(SearchEngine):
 
         return results
 
-    async def search_images(self, query: str, page: int = 1) -> list[ImageResult]:
-        args = {"q": query, "source": "web"}
+    async def search_images(self, query: str, page: int = 1, image_size: str = "") -> list[ImageResult]:
+        args: dict[str, str | int] = {"q": query, "source": "web"}
+        # Brave size filter
+        size_map = {"large": "Large", "medium": "Medium", "small": "Small"}
+        if image_size in size_map:
+            args["size"] = size_map[image_size]
         client = get_http_client()
         resp = await client.get(
             f"{BASE_URL}/images?{urlencode(args)}",

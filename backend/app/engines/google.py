@@ -140,9 +140,9 @@ class GoogleEngine(SearchEngine):
 
         return results
 
-    async def search_images(self, query: str, page: int = 1) -> list[ImageResult]:
+    async def search_images(self, query: str, page: int = 1, image_size: str = "") -> list[ImageResult]:
         start = (page - 1) * 50
-        params = {
+        params: dict[str, str | int] = {
             "q": query,
             "tbm": "isch",
             "hl": "en",
@@ -151,6 +151,10 @@ class GoogleEngine(SearchEngine):
             "asearch": "arc",
             "async": _build_async_param(start),
         }
+        # Google size filter: tbs=isz:l (large), isz:m (medium), isz:s (small)
+        size_map = {"large": "isz:l", "medium": "isz:m", "small": "isz:s"}
+        if image_size in size_map:
+            params["tbs"] = size_map[image_size]
 
         client = get_http_client()
         resp = await client.get(

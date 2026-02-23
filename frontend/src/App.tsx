@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
@@ -10,20 +10,31 @@ import { search as apiSearch, isImageResult, type SearchResponse, type WebResult
 import { cn } from "@/lib/utils";
 
 type Category = "web" | "images";
+type ImageSize = "" | "large" | "medium" | "small";
 
-function parseUrlState(): { q: string; cat: Category; page: number } {
+const IMAGE_SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
+  { value: "", label: "All sizes" },
+  { value: "large", label: "Large" },
+  { value: "medium", label: "Medium" },
+  { value: "small", label: "Small" },
+];
+
+function parseUrlState(): { q: string; cat: Category; page: number; imageSize: ImageSize } {
   const params = new URLSearchParams(window.location.search);
   const q = params.get("q") ?? "";
   const cat = params.get("category") === "images" ? "images" : "web";
   const page = Math.max(1, parseInt(params.get("page") ?? "1", 10) || 1);
-  return { q, cat, page };
+  const rawSize = params.get("image_size") ?? "";
+  const imageSize: ImageSize = (["large", "medium", "small"].includes(rawSize) ? rawSize : "") as ImageSize;
+  return { q, cat, page, imageSize };
 }
 
-function pushUrl(q: string, cat: Category, page: number) {
+function pushUrl(q: string, cat: Category, page: number, imageSize: ImageSize = "") {
   const params = new URLSearchParams();
   params.set("q", q);
   if (cat !== "web") params.set("category", cat);
   if (page > 1) params.set("page", String(page));
+  if (imageSize) params.set("image_size", imageSize);
   const url = `/?${params.toString()}`;
   if (window.location.pathname + window.location.search !== url) {
     window.history.pushState(null, "", url);
@@ -35,22 +46,24 @@ function App() {
   const [query, setQuery] = useState(initial.q);
   const [category, setCategory] = useState<Category>(initial.cat);
   const [page, setPage] = useState(initial.page);
+  const [imageSize, setImageSize] = useState<ImageSize>(initial.imageSize);
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hasSearched, setHasSearched] = useState(!!initial.q);
 
   const doSearch = useCallback(
-    async (q: string, cat: Category = category, p: number = 1, updateUrl = true) => {
+    async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true) => {
       if (!q.trim()) return;
       setQuery(q);
       setCategory(cat);
       setPage(p);
+      setImageSize(size);
       setLoading(true);
       setHasSearched(true);
-      if (updateUrl) pushUrl(q, cat, p);
+      if (updateUrl) pushUrl(q, cat, p, cat === "images" ? size : "");
       try {
-        const res = await apiSearch(q, cat, p);
+        const res = await apiSearch(q, cat, p, cat === "images" ? size : "");
         setResponse(res);
       } catch (err) {
         setResponse({
@@ -66,13 +79,13 @@ function App() {
         setLoading(false);
       }
     },
-    [category]
+    [category, imageSize]
   );
 
   // Restore search from URL on initial load
   useEffect(() => {
     if (initial.q) {
-      doSearch(initial.q, initial.cat, initial.page, false);
+      doSearch(initial.q, initial.cat, initial.page, initial.imageSize, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -80,15 +93,16 @@ function App() {
   // Handle browser back/forward
   useEffect(() => {
     const onPopState = () => {
-      const { q, cat, page: p } = parseUrlState();
+      const { q, cat, page: p, imageSize: size } = parseUrlState();
       if (q) {
-        doSearch(q, cat, p, false);
+        doSearch(q, cat, p, size, false);
       } else {
         setHasSearched(false);
         setResponse(null);
         setQuery("");
         setPage(1);
         setCategory("web");
+        setImageSize("");
       }
     };
     window.addEventListener("popstate", onPopState);
@@ -97,19 +111,25 @@ function App() {
 
   const handleCategoryChange = (cat: Category) => {
     setCategory(cat);
-    if (query) doSearch(query, cat, 1);
+    if (query) doSearch(query, cat, 1, cat === "images" ? imageSize : "");
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
-    doSearch(query, category, newPage);
+    doSearch(query, category, newPage, imageSize);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleImageSizeChange = (size: ImageSize) => {
+    setImageSize(size);
+    if (query) doSearch(query, category, 1, size);
   };
 
   const handleGoHome = () => {
     setHasSearched(false);
     setResponse(null);
     setPage(1);
+    setImageSize("");
     window.history.pushState(null, "", "/");
   };
 
@@ -183,7 +203,7 @@ function App() {
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-1 px-4 pb-2">
+        <div className="flex items-center gap-1 px-4 pb-2">
           {([
             { key: "web" as const, label: "Web", icon: Globe },
             { key: "images" as const, label: "Images", icon: ImageIcon },
@@ -202,6 +222,28 @@ function App() {
               {label}
             </button>
           ))}
+
+          {/* Image size filter — only visible in images category */}
+          {category === "images" && (
+            <>
+              <div className="mx-2 h-5 w-px bg-border" />
+              <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+              {IMAGE_SIZE_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => handleImageSizeChange(value)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    imageSize === value
+                      ? "bg-secondary text-secondary-foreground"
+                      : "text-muted-foreground hover:bg-accent"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </header>
 
