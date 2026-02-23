@@ -209,3 +209,73 @@ export async function listBackgrounds(page = 1, perPage = 20): Promise<Backgroun
   if (!resp.ok) throw new Error("Failed to list backgrounds");
   return resp.json();
 }
+
+// --- Bookmarks ---
+
+export interface Bookmark {
+  id: string;
+  type: "web" | "image";
+  title: string;
+  url: string;
+  content: string;
+  img_src: string;
+  thumbnail_src: string;
+  source: string;
+  engine: string;
+  width: number;
+  height: number;
+  created_at: string;
+}
+
+export interface BookmarkListResponse {
+  bookmarks: Bookmark[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export async function getBookmarks(page = 1, perPage = 30, type = ""): Promise<BookmarkListResponse> {
+  const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (type) params.set("type", type);
+  const resp = await fetch(`${API_BASE}/bookmarks?${params}`);
+  if (!resp.ok) throw new Error("Failed to fetch bookmarks");
+  return resp.json();
+}
+
+export async function getBookmarkedUrls(): Promise<Set<string>> {
+  const resp = await fetch(`${API_BASE}/bookmarks/urls`);
+  if (!resp.ok) throw new Error("Failed to fetch bookmarked URLs");
+  const data: { urls: string[] } = await resp.json();
+  return new Set(data.urls);
+}
+
+export async function addBookmark(data: {
+  type: "web" | "image";
+  title: string;
+  url: string;
+  content?: string;
+  img_src?: string;
+  thumbnail_src?: string;
+  source?: string;
+  engine?: string;
+  width?: number;
+  height?: number;
+}): Promise<Bookmark> {
+  const resp = await fetch(`${API_BASE}/bookmarks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!resp.ok) throw new Error("Failed to add bookmark");
+  return resp.json();
+}
+
+export async function removeBookmark(id: string): Promise<void> {
+  const resp = await fetch(`${API_BASE}/bookmarks/${id}`, { method: "DELETE" });
+  if (!resp.ok) throw new Error("Failed to remove bookmark");
+}
+
+export async function removeBookmarkByUrl(url: string): Promise<void> {
+  const resp = await fetch(`${API_BASE}/bookmarks/by-url/${encodeURIComponent(url)}`, { method: "DELETE" });
+  if (!resp.ok) throw new Error("Failed to remove bookmark");
+}

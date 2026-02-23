@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, type MouseEvent } from "react";
 import type { ImageResult } from "@/lib/api";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Bookmark, BookmarkCheck } from "lucide-react";
 
 function formatSize(w: number, h: number): string {
   return `${w} × ${h}`;
@@ -8,9 +8,11 @@ function formatSize(w: number, h: number): string {
 
 interface ImageResultsProps {
   results: ImageResult[];
+  bookmarkedUrls?: Set<string>;
+  onToggleBookmark?: (result: ImageResult) => void;
 }
 
-export function ImageResults({ results }: ImageResultsProps) {
+export function ImageResults({ results, bookmarkedUrls, onToggleBookmark }: ImageResultsProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   // Track detected dimensions per result index
   const [dims, setDims] = useState<Record<number, { w: number; h: number }>>({});
@@ -114,7 +116,22 @@ export function ImageResults({ results }: ImageResultsProps) {
             />
             {/* Hover overlay with title + size */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
-              <p className="truncate text-xs text-white">{img.title}</p>
+              <div className="flex items-center gap-1">
+                <p className="truncate text-xs text-white flex-1">{img.title}</p>
+                {onToggleBookmark && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleBookmark(img); }}
+                    aria-label={bookmarkedUrls?.has(img.url) ? "Remove bookmark" : "Add bookmark"}
+                    className="shrink-0 rounded p-0.5 hover:bg-white/20 transition-colors"
+                  >
+                    {bookmarkedUrls?.has(img.url) ? (
+                      <BookmarkCheck className="h-4 w-4 text-yellow-400" />
+                    ) : (
+                      <Bookmark className="h-4 w-4 text-white/70" />
+                    )}
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-1">
                 <p className="truncate text-[10px] text-white/60">{img.source}</p>
                 {getSize(i) && (
@@ -194,6 +211,19 @@ export function ImageResults({ results }: ImageResultsProps) {
               >
                 Visit page →
               </a>
+              {onToggleBookmark && (
+                <button
+                  onClick={() => onToggleBookmark(selected)}
+                  aria-label={bookmarkedUrls?.has(selected.url) ? "Remove bookmark" : "Add bookmark"}
+                  className="ml-3 inline-flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors"
+                >
+                  {bookmarkedUrls?.has(selected.url) ? (
+                    <><BookmarkCheck className="h-4 w-4 text-primary" /> Bookmarked</>
+                  ) : (
+                    <><Bookmark className="h-4 w-4" /> Bookmark</>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

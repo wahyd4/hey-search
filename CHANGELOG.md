@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.8.0
+
+### Added
+
+- **Bookmarks** — save any web or image result for later reading
+  - Bookmark icon on every search result card (web and image)
+  - Bookmark toggle in image lightbox viewer
+  - Dedicated `/bookmarks` page with filter tabs (All / Web / Images)
+  - Web bookmarks shown as cards with favicons, engine badges, and content snippets
+  - Image bookmarks displayed in masonry grid with hover overlays
+  - Remove individual bookmarks with trash button
+  - Paginated with "Load more" for large collections
+  - Bookmarks link in homepage footer and results page footer
+  - Stored in SQLite (same database as other app settings)
+  - Full CRUD API: `GET/POST /api/bookmarks`, `DELETE /api/bookmarks/{id}`, `DELETE /api/bookmarks/by-url/{url}`, `GET /api/bookmarks/urls`
+
 ## 1.5.0
 
 ### Added

@@ -17,6 +17,7 @@ from app.engines import registry
 from app.excluded import init_db
 from app.settings import init_settings_table
 from app.cache import init_redis, close_redis
+from app.bookmarks import init_bookmarks_table
 from app.models import APIError
 
 
@@ -24,6 +25,7 @@ from app.models import APIError
 async def lifespan(application: FastAPI):
     init_db()
     init_settings_table()
+    init_bookmarks_table()
     registry.load_default_engines()
     await init_redis()
     yield

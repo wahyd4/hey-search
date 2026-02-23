@@ -428,3 +428,113 @@ async def api_serve_background(filename: str):
     if path is None:
         return JSONResponse(status_code=404, content={"code": "not_found", "message": "Image not found"})
     return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+
+
+# --- Bookmarks ---
+
+from app.bookmarks import add_bookmark, remove_bookmark, remove_bookmark_by_url, get_bookmarks, get_bookmarked_urls, count_bookmarks
+
+
+class BookmarkCreate(BaseModel):
+    type: Literal["web", "image"] = "web"
+    title: str
+    url: str
+    content: str = ""
+    img_src: str = ""
+    thumbnail_src: str = ""
+    source: str = ""
+    engine: str = ""
+    width: int = 0
+    height: int = 0
+
+
+class BookmarkItem(BaseModel):
+    id: str
+    type: str
+    title: str
+    url: str
+    content: str = ""
+    img_src: str = ""
+    thumbnail_src: str = ""
+    source: str = ""
+    engine: str = ""
+    width: int = 0
+    height: int = 0
+    created_at: str
+
+
+class BookmarkListResponse(BaseModel):
+    bookmarks: list[BookmarkItem]
+    total: int
+    page: int
+    per_page: int
+
+
+class BookmarkedUrlsResponse(BaseModel):
+    urls: list[str]
+
+
+@router.get(
+    "/bookmarks",
+    response_model=BookmarkListResponse,
+    summary="List bookmarks",
+    tags=["Bookmarks"],
+)
+async def api_list_bookmarks(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(30, ge=1, le=100),
+    type: str = Query("", description="Filter by type: 'web' or 'image'"),
+):
+    items = get_bookmarks(page, per_page, type)
+    total = count_bookmarks(type)
+    return BookmarkListResponse(
+        bookmarks=[BookmarkItem(**b) for b in items],
+        total=total,
+        page=page,
+        per_page=per_page,
+    )
+
+
+@router.get(
+    "/bookmarks/urls",
+    response_model=BookmarkedUrlsResponse,
+    summary="Get all bookmarked URLs for quick lookup",
+    tags=["Bookmarks"],
+)
+async def api_bookmarked_urls():
+    return BookmarkedUrlsResponse(urls=list(get_bookmarked_urls()))
+
+
+@router.post(
+    "/bookmarks",
+    response_model=BookmarkItem,
+    summary="Add a bookmark",
+    tags=["Bookmarks"],
+)
+async def api_add_bookmark(body: BookmarkCreate):
+    result = add_bookmark(body.model_dump())
+    return BookmarkItem(**result)
+
+
+@router.delete(
+    "/bookmarks/{bookmark_id}",
+    summary="Remove a bookmark by ID",
+    tags=["Bookmarks"],
+)
+async def api_remove_bookmark(bookmark_id: str):
+    removed = remove_bookmark(bookmark_id)
+    if not removed:
+        return JSONResponse(status_code=404, content={"code": "not_found", "message": "Bookmark not found"})
+    return {"message": "Bookmark removed"}
+
+
+@router.delete(
+    "/bookmarks/by-url/{url:path}",
+    summary="Remove a bookmark by URL",
+    tags=["Bookmarks"],
+)
+async def api_remove_bookmark_by_url(url: str):
+    removed = remove_bookmark_by_url(url)
+    if not removed:
+        return JSONResponse(status_code=404, content={"code": "not_found", "message": "Bookmark not found"})
+    return {"message": "Bookmark removed"}

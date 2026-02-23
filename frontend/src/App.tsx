@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal, RefreshCw, Images } from "lucide-react";
+import { Search, Settings, Globe, ImageIcon, Loader2, ExternalLink, ChevronLeft, ChevronRight, SlidersHorizontal, RefreshCw, Images, BookmarkIcon } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
@@ -7,7 +7,8 @@ import { SearchStats } from "@/components/SearchStats";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ErrorToast } from "@/components/ErrorToast";
 import { BackgroundGallery } from "@/components/BackgroundGallery";
-import { search as apiSearch, isImageResult, getBackground, refreshBackground, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
+import { Bookmarks } from "@/components/Bookmarks";
+import { search as apiSearch, isImageResult, getBackground, refreshBackground, getBookmarkedUrls, addBookmark, removeBookmarkByUrl, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Category = "web" | "images";
@@ -55,15 +56,20 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [hasSearched, setHasSearched] = useState(!!initial.q);
   const [showGallery, setShowGallery] = useState(window.location.pathname === "/backgrounds");
+  const [showBookmarks, setShowBookmarks] = useState(window.location.pathname === "/bookmarks");
   const statusRef = useRef<HTMLDivElement>(null);
 
   // Background image state
   const [bgInfo, setBgInfo] = useState<BackgroundInfo | null>(null);
   const [bgRefreshing, setBgRefreshing] = useState(false);
 
-  // Fetch background on mount
+  // Bookmarked URLs for toggle state
+  const [bookmarkedUrls, setBookmarkedUrls] = useState<Set<string>>(new Set());
+
+  // Fetch background and bookmarked URLs on mount
   useEffect(() => {
     getBackground().then(setBgInfo).catch(() => {});
+    getBookmarkedUrls().then(setBookmarkedUrls).catch(() => {});
   }, []);
 
   const doSearch = useCallback(
@@ -113,9 +119,16 @@ function App() {
     const onPopState = () => {
       if (window.location.pathname === "/backgrounds") {
         setShowGallery(true);
+        setShowBookmarks(false);
+        return;
+      }
+      if (window.location.pathname === "/bookmarks") {
+        setShowBookmarks(true);
+        setShowGallery(false);
         return;
       }
       setShowGallery(false);
+      setShowBookmarks(false);
       const { q, cat, page: p, imageSize: size } = parseUrlState();
       if (q) {
         doSearch(q, cat, p, size, false);
@@ -154,8 +167,8 @@ function App() {
     setPage(1);
     setImageSize("");
     setShowGallery(false);
+    setShowBookmarks(false);
     window.history.pushState(null, "", "/");
-    // Re-fetch background in case it changed
     getBackground().then(setBgInfo).catch(() => {});
   };
 
@@ -173,7 +186,39 @@ function App() {
 
   const handleShowGallery = () => {
     setShowGallery(true);
+    setShowBookmarks(false);
     window.history.pushState(null, "", "/backgrounds");
+  };
+
+  const handleShowBookmarks = () => {
+    setShowBookmarks(true);
+    setShowGallery(false);
+    window.history.pushState(null, "", "/bookmarks");
+  };
+
+  const handleToggleBookmark = async (result: WebResult | ImageResult) => {
+    const isImage = "img_src" in result;
+    const url = result.url;
+    if (bookmarkedUrls.has(url)) {
+      await removeBookmarkByUrl(url);
+      setBookmarkedUrls((prev) => { const next = new Set(prev); next.delete(url); return next; });
+    } else {
+      await addBookmark({
+        type: isImage ? "image" : "web",
+        title: result.title,
+        url: result.url,
+        content: "content" in result ? result.content : "",
+        engine: result.engine,
+        ...(isImage && {
+          img_src: (result as ImageResult).img_src,
+          thumbnail_src: (result as ImageResult).thumbnail_src,
+          source: (result as ImageResult).source,
+          width: (result as ImageResult).width,
+          height: (result as ImageResult).height,
+        }),
+      });
+      setBookmarkedUrls((prev) => new Set(prev).add(url));
+    }
   };
 
   const webResults = response?.results.filter((r): r is WebResult => !isImageResult(r)) ?? [];
@@ -183,6 +228,11 @@ function App() {
   // Gallery page
   if (showGallery) {
     return <BackgroundGallery onBack={handleGoHome} />;
+  }
+
+  // Bookmarks page
+  if (showBookmarks) {
+    return <Bookmarks />;
   }
 
   const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
@@ -276,6 +326,16 @@ function App() {
           >
             <Images className="h-3.5 w-3.5" aria-hidden="true" />
             Backgrounds
+          </button>
+          <button
+            onClick={handleShowBookmarks}
+            className={cn(
+              "flex items-center gap-1.5 text-xs hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors",
+              bgUrl ? "text-white/60 hover:text-white" : "text-muted-foreground"
+            )}
+          >
+            <BookmarkIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            Bookmarks
           </button>
         </footer>
 
@@ -408,8 +468,8 @@ function App() {
             <div className="flex gap-6">
               {/* Results column */}
               <div className="min-w-0 flex-1">
-                {category === "web" && <WebResults results={webResults} />}
-                {category === "images" && <ImageResults results={imageResults} />}
+                {category === "web" && <WebResults results={webResults} bookmarkedUrls={bookmarkedUrls} onToggleBookmark={handleToggleBookmark} />}
+                {category === "images" && <ImageResults results={imageResults} bookmarkedUrls={bookmarkedUrls} onToggleBookmark={handleToggleBookmark} />}
 
                 {/* Pagination */}
                 {hasResults && (
@@ -461,15 +521,24 @@ function App() {
       <footer className="border-t px-4 py-3">
         <div className="mx-auto flex max-w-6xl items-center justify-between text-xs text-muted-foreground">
           <span>Hey Search</span>
-          <a
-            href="/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
-          >
-            <ExternalLink className="h-3 w-3" aria-hidden="true" />
-            API Docs
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleShowBookmarks}
+              className="flex items-center gap-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
+            >
+              <BookmarkIcon className="h-3 w-3" aria-hidden="true" />
+              Bookmarks
+            </button>
+            <a
+              href="/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              API Docs
+            </a>
+          </div>
         </div>
       </footer>
 

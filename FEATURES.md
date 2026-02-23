@@ -44,6 +44,15 @@
 - **Optional** — when `REDIS_URL` is not set or Redis is unreachable, caching is silently disabled
 - **Deterministic keys** — cache key derived from query + category + page + image_size + engines
 
+## Bookmarks
+
+- **Bookmark any result** — click the bookmark icon on web or image search results to save them
+- **Bookmarks page** — dedicated `/bookmarks` page to browse all saved items
+- **Filter by type** — tabs to filter All / Web / Images
+- **Masonry image grid** — saved images displayed in a masonry layout
+- **Remove bookmarks** — delete individual bookmarks from the bookmarks page
+- **Persistent storage** — bookmarks stored in SQLite alongside other app data
+
 ## UI / UX
 
 - **Mobile-first** responsive design built with React, Tailwind CSS, and shadcn theming

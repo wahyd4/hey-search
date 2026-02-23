@@ -1,16 +1,20 @@
 import type { WebResult } from "@/lib/api";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Bookmark, BookmarkCheck } from "lucide-react";
 
 interface WebResultsProps {
   results: WebResult[];
+  bookmarkedUrls?: Set<string>;
+  onToggleBookmark?: (result: WebResult) => void;
 }
 
-export function WebResults({ results }: WebResultsProps) {
+export function WebResults({ results, bookmarkedUrls, onToggleBookmark }: WebResultsProps) {
   if (results.length === 0) return null;
 
   return (
     <div className="space-y-6">
-      {results.map((result, i) => (
+      {results.map((result, i) => {
+        const isBookmarked = bookmarkedUrls?.has(result.url) ?? false;
+        return (
         <article key={`${result.url}-${i}`} className="group max-w-2xl">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <img
@@ -21,6 +25,19 @@ export function WebResults({ results }: WebResultsProps) {
             />
             <span className="truncate">{new URL(result.url).hostname}</span>
             <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{result.engine}</span>
+            {onToggleBookmark && (
+              <button
+                onClick={() => onToggleBookmark(result)}
+                aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+                className="ml-auto rounded p-1 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors"
+              >
+                {isBookmarked ? (
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
+                ) : (
+                  <Bookmark className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                )}
+              </button>
+            )}
           </div>
           <a
             href={result.url}
@@ -37,7 +54,8 @@ export function WebResults({ results }: WebResultsProps) {
             </p>
           )}
         </article>
-      ))}
+        );
+      })}
     </div>
   );
 }
