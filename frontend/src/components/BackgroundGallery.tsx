@@ -7,9 +7,10 @@ interface BackgroundGalleryProps {
   onBack: () => void;
   onShowSettings: () => void;
   onShowBookmarks: () => void;
+  onShowStats: () => void;
 }
 
-export function BackgroundGallery({ onBack, onShowSettings, onShowBookmarks }: BackgroundGalleryProps) {
+export function BackgroundGallery({ onBack, onShowSettings, onShowBookmarks, onShowStats }: BackgroundGalleryProps) {
   const [images, setImages] = useState<BackgroundListItem[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -51,6 +52,7 @@ export function BackgroundGallery({ onBack, onShowSettings, onShowBookmarks }: B
         onShowSettings={onShowSettings}
         onShowBookmarks={onShowBookmarks}
         onShowGallery={() => {}}
+        onShowStats={onShowStats}
       >
         <h1 className="text-base font-semibold">
           Background Gallery

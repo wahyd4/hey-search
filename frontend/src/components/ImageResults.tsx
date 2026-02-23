@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, type MouseEvent } from "react";
 import type { ImageResult } from "@/lib/api";
+import { trackClick } from "@/lib/api";
 import { X, ChevronLeft, ChevronRight, Bookmark, BookmarkCheck } from "lucide-react";
 
 function formatSize(w: number, h: number): string {
@@ -8,11 +9,13 @@ function formatSize(w: number, h: number): string {
 
 interface ImageResultsProps {
   results: ImageResult[];
+  query?: string;
+  category?: string;
   bookmarkedUrls?: Set<string>;
   onToggleBookmark?: (result: ImageResult) => void;
 }
 
-export function ImageResults({ results, bookmarkedUrls, onToggleBookmark }: ImageResultsProps) {
+export function ImageResults({ results, query = "", category = "images", bookmarkedUrls, onToggleBookmark }: ImageResultsProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   // Track detected dimensions per result index
   const [dims, setDims] = useState<Record<number, { w: number; h: number }>>({});
@@ -98,7 +101,7 @@ export function ImageResults({ results, bookmarkedUrls, onToggleBookmark }: Imag
             target="_blank"
             rel="noopener noreferrer"
             role="listitem"
-            onClick={(e) => handleCardClick(e, i)}
+            onClick={(e) => { handleCardClick(e, i); trackClick({ query, category, position: i + 1, url: img.url, title: img.title, engine: img.engine }); }}
             className="group relative mb-3 inline-block w-full overflow-hidden rounded-lg border bg-muted break-inside-avoid hover:ring-2 hover:ring-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-shadow"
           >
             <img
@@ -207,6 +210,7 @@ export function ImageResults({ results, bookmarkedUrls, onToggleBookmark }: Imag
                 href={selected.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackClick({ query, category, position: selectedIndex + 1, url: selected.url, title: selected.title, engine: selected.engine })}
                 className="mt-2 inline-block text-sm text-blue-600 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-blue-400"
               >
                 Visit page →

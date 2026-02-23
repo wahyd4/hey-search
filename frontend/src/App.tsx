@@ -9,6 +9,7 @@ import { ErrorToast } from "@/components/ErrorToast";
 import { BackgroundGallery } from "@/components/BackgroundGallery";
 import { Bookmarks } from "@/components/Bookmarks";
 import { AppHeader } from "@/components/AppHeader";
+import { StatsPage } from "@/components/StatsPage";
 import { search as apiSearch, isImageResult, getBackground, refreshBackground, getBookmarkedUrls, addBookmark, removeBookmarkByUrl, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +59,7 @@ function App() {
   const [hasSearched, setHasSearched] = useState(!!initial.q);
   const [showGallery, setShowGallery] = useState(window.location.pathname === "/backgrounds");
   const [showBookmarks, setShowBookmarks] = useState(window.location.pathname === "/bookmarks");
+  const [showStats, setShowStats] = useState(window.location.pathname === "/stats");
   const statusRef = useRef<HTMLDivElement>(null);
 
   // Background image state
@@ -74,7 +76,7 @@ function App() {
   }, []);
 
   const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
-  const isHome = !hasSearched && !showGallery && !showBookmarks;
+  const isHome = !hasSearched && !showGallery && !showBookmarks && !showStats;
 
   // iOS Safari fills top/bottom browser areas from page background color,
   // so sample image edge colors to avoid white/black bars.
@@ -198,17 +200,20 @@ function App() {
   useEffect(() => {
     const onPopState = () => {
       if (window.location.pathname === "/backgrounds") {
-        setShowGallery(true);
-        setShowBookmarks(false);
+        setShowGallery(true); setShowBookmarks(false); setShowStats(false);
         return;
       }
       if (window.location.pathname === "/bookmarks") {
-        setShowBookmarks(true);
-        setShowGallery(false);
+        setShowBookmarks(true); setShowGallery(false); setShowStats(false);
+        return;
+      }
+      if (window.location.pathname === "/stats") {
+        setShowStats(true); setShowGallery(false); setShowBookmarks(false);
         return;
       }
       setShowGallery(false);
       setShowBookmarks(false);
+      setShowStats(false);
       const { q, cat, page: p, imageSize: size } = parseUrlState();
       if (q) {
         doSearch(q, cat, p, size, false);
@@ -248,6 +253,7 @@ function App() {
     setImageSize("");
     setShowGallery(false);
     setShowBookmarks(false);
+    setShowStats(false);
     window.history.pushState(null, "", "/");
     getBackground().then(setBgInfo).catch(() => {});
   };
@@ -267,13 +273,22 @@ function App() {
   const handleShowGallery = () => {
     setShowGallery(true);
     setShowBookmarks(false);
+    setShowStats(false);
     window.history.pushState(null, "", "/backgrounds");
   };
 
   const handleShowBookmarks = () => {
     setShowBookmarks(true);
     setShowGallery(false);
+    setShowStats(false);
     window.history.pushState(null, "", "/bookmarks");
+  };
+
+  const handleShowStats = () => {
+    setShowStats(true);
+    setShowGallery(false);
+    setShowBookmarks(false);
+    window.history.pushState(null, "", "/stats");
   };
 
   const handleToggleBookmark = async (result: WebResult | ImageResult) => {
@@ -313,7 +328,7 @@ function App() {
   // Gallery page
   if (showGallery) {
     return <>
-      <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} />
+      <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} onShowStats={handleShowStats} />
       {settingsModal}
     </>;
   }
@@ -321,7 +336,15 @@ function App() {
   // Bookmarks page
   if (showBookmarks) {
     return <>
-      <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} />
+      <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} onShowStats={handleShowStats} />
+      {settingsModal}
+    </>;
+  }
+
+  // Stats page
+  if (showStats) {
+    return <>
+      <StatsPage onGoHome={handleGoHome} />
       {settingsModal}
     </>;
   }
@@ -351,6 +374,7 @@ function App() {
             onShowSettings={() => setShowSettings(true)}
             onShowBookmarks={handleShowBookmarks}
             onShowGallery={handleShowGallery}
+            onShowStats={handleShowStats}
             transparent={!!bgUrl}
             hideLogo
           />
@@ -464,6 +488,7 @@ function App() {
         onShowSettings={() => setShowSettings(true)}
         onShowBookmarks={handleShowBookmarks}
         onShowGallery={handleShowGallery}
+        onShowStats={handleShowStats}
       >
         <SearchBar initialQuery={query} onSearch={(q) => doSearch(q)} />
       </AppHeader>
@@ -549,8 +574,8 @@ function App() {
             <div className="flex gap-6">
               {/* Results column */}
               <div className="min-w-0 flex-1">
-                {category === "web" && <WebResults results={webResults} bookmarkedUrls={bookmarkedUrls} onToggleBookmark={handleToggleBookmark} />}
-                {category === "images" && <ImageResults results={imageResults} bookmarkedUrls={bookmarkedUrls} onToggleBookmark={handleToggleBookmark} />}
+                {category === "web" && <WebResults results={webResults} query={query} category={category} bookmarkedUrls={bookmarkedUrls} onToggleBookmark={handleToggleBookmark} />}
+                {category === "images" && <ImageResults results={imageResults} query={query} category={category} bookmarkedUrls={bookmarkedUrls} onToggleBookmark={handleToggleBookmark} />}
 
                 {/* Pagination */}
                 {hasResults && (

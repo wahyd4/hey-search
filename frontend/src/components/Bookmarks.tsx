@@ -10,9 +10,10 @@ interface BookmarksProps {
   onGoHome: () => void;
   onShowSettings: () => void;
   onShowGallery: () => void;
+  onShowStats: () => void;
 }
 
-export function Bookmarks({ onGoHome, onShowSettings, onShowGallery }: BookmarksProps) {
+export function Bookmarks({ onGoHome, onShowSettings, onShowGallery, onShowStats }: BookmarksProps) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -64,6 +65,7 @@ export function Bookmarks({ onGoHome, onShowSettings, onShowGallery }: Bookmarks
         onShowSettings={onShowSettings}
         onShowBookmarks={() => {}}
         onShowGallery={onShowGallery}
+        onShowStats={onShowStats}
       >
         <h1 className="text-base font-semibold">
           Bookmarks

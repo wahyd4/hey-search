@@ -279,3 +279,38 @@ export async function removeBookmarkByUrl(url: string): Promise<void> {
   const resp = await fetch(`${API_BASE}/bookmarks/by-url/${encodeURIComponent(url)}`, { method: "DELETE" });
   if (!resp.ok) throw new Error("Failed to remove bookmark");
 }
+
+// --- Analytics ---
+
+export interface StatsSummary {
+  period_days: number;
+  total_searches: number;
+  total_clicks: number;
+  top_queries: { query: string; count: number }[];
+  top_clicked_urls: { url: string; title: string; engine: string; count: number }[];
+  top_positions: { position: number; count: number }[];
+  engine_clicks: { engine: string; count: number }[];
+  daily_searches: { date: string; searches: number }[];
+}
+
+export async function trackClick(data: {
+  query: string;
+  category: string;
+  position: number;
+  url: string;
+  title: string;
+  engine: string;
+}): Promise<void> {
+  // fire-and-forget — don't block the user
+  fetch(`${API_BASE}/stats/click`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  }).catch(() => {});
+}
+
+export async function fetchStats(days = 7): Promise<StatsSummary> {
+  const resp = await fetch(`${API_BASE}/stats?days=${days}`);
+  if (!resp.ok) throw new Error("Failed to fetch stats");
+  return resp.json();
+}

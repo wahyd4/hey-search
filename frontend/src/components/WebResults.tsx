@@ -1,13 +1,16 @@
 import type { WebResult } from "@/lib/api";
+import { trackClick } from "@/lib/api";
 import { ExternalLink, Bookmark, BookmarkCheck } from "lucide-react";
 
 interface WebResultsProps {
   results: WebResult[];
+  query?: string;
+  category?: string;
   bookmarkedUrls?: Set<string>;
   onToggleBookmark?: (result: WebResult) => void;
 }
 
-export function WebResults({ results, bookmarkedUrls, onToggleBookmark }: WebResultsProps) {
+export function WebResults({ results, query = "", category = "web", bookmarkedUrls, onToggleBookmark }: WebResultsProps) {
   if (results.length === 0) return null;
 
   return (
@@ -43,6 +46,7 @@ export function WebResults({ results, bookmarkedUrls, onToggleBookmark }: WebRes
             href={result.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackClick({ query, category, position: i + 1, url: result.url, title: result.title, engine: result.engine })}
             className="mt-1 block text-lg font-medium text-blue-600 visited:text-purple-600 hover:underline dark:text-blue-400 dark:visited:text-purple-400 sm:text-xl"
           >
             {result.title}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Settings, BookmarkIcon, Images, ExternalLink } from "lucide-react";
+import { Menu, X, Settings, BookmarkIcon, Images, ExternalLink, BarChart2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
@@ -7,6 +7,7 @@ interface AppHeaderProps {
   onShowSettings: () => void;
   onShowBookmarks: () => void;
   onShowGallery: () => void;
+  onShowStats: () => void;
   /** Hides the logo button (used on the home page) */
   hideLogo?: boolean;
   /** Transparent header overlay (home page with background image) */
@@ -18,10 +19,11 @@ interface AppHeaderProps {
 // Items ordered left→right. Rightmost item (Settings) gets the shortest delay,
 // so it appears first creating the right-to-left unfold effect.
 const NAV_ITEMS = [
-  { id: "docs",        icon: ExternalLink, label: "API Docs",    href: "/docs" },
-  { id: "gallery",     icon: Images,       label: "Backgrounds", href: null },
-  { id: "bookmarks",   icon: BookmarkIcon, label: "Bookmarks",   href: null },
-  { id: "settings",    icon: Settings,     label: "Settings",    href: null },
+  { id: "docs",      icon: ExternalLink, label: "API Docs",    href: "/docs" },
+  { id: "stats",     icon: BarChart2,    label: "Stats",       href: null },
+  { id: "gallery",   icon: Images,       label: "Backgrounds", href: null },
+  { id: "bookmarks", icon: BookmarkIcon, label: "Bookmarks",   href: null },
+  { id: "settings",  icon: Settings,     label: "Settings",    href: null },
 ] as const;
 
 const STAGGER_MS = 60;
@@ -31,6 +33,7 @@ export function AppHeader({
   onShowSettings,
   onShowBookmarks,
   onShowGallery,
+  onShowStats,
   hideLogo = false,
   transparent = false,
   children,
@@ -44,6 +47,7 @@ export function AppHeader({
     settings:  () => { onShowSettings();  close(); },
     bookmarks: () => { onShowBookmarks(); close(); },
     gallery:   () => { onShowGallery();   close(); },
+    stats:     () => { onShowStats();     close(); },
     docs:      close,
   };
 

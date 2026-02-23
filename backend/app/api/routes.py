@@ -13,6 +13,7 @@ from app.engines import registry
 from app.excluded import get_excluded_domains, add_excluded_domain, remove_excluded_domain
 from app.settings import get_all_settings, get_setting, set_setting
 from app.cache import is_cache_available, flush_cache, reconnect_redis
+from app import stats as _stats
 
 router = APIRouter()
 
@@ -65,6 +66,7 @@ curl '$BASE_URL/api/search?q=cats&category=images&image_size=large'
     },
 )
 async def api_search(
+    request: Request,
     q: str = Query(..., description="Search query string", min_length=1),
     category: Literal["web", "images"] = Query("web", description="Search category"),
     page: int = Query(1, ge=1, le=50, description="Page number"),
@@ -72,7 +74,18 @@ async def api_search(
     image_size: Literal["", "large", "medium", "small"] = Query("", description="Filter images by size (images category only)"),
 ):
     engine_list = [e.strip() for e in engines.split(",")] if engines else None
-    return await search(q, category=category, page=page, engines=engine_list, image_size=image_size)
+    result = await search(q, category=category, page=page, engines=engine_list, image_size=image_size)
+    origin_ip = request.client.host if request.client else ""
+    user_agent = request.headers.get("user-agent", "")
+    _stats.record_search(
+        query=q,
+        category=category,
+        origin_ip=origin_ip,
+        user_agent=user_agent,
+        result_count=result.total_results,
+        cached=result.cached,
+    )
+    return result
 
 
 # --- Autocomplete ---
@@ -538,3 +551,56 @@ async def api_remove_bookmark_by_url(url: str):
     if not removed:
         return JSONResponse(status_code=404, content={"code": "not_found", "message": "Bookmark not found"})
     return {"message": "Bookmark removed"}
+
+
+# --- Analytics / Stats ---
+
+class ClickEventRequest(BaseModel):
+    query: str
+    category: str = "web"
+    position: int = 0
+    url: str
+    title: str = ""
+    engine: str = ""
+
+
+class StatsResponse(BaseModel):
+    period_days: int
+    total_searches: int
+    total_clicks: int
+    top_queries: list[dict]
+    top_clicked_urls: list[dict]
+    top_positions: list[dict]
+    engine_clicks: list[dict]
+    daily_searches: list[dict]
+
+
+@router.post(
+    "/stats/click",
+    summary="Record a result click",
+    description="Called by the frontend when a user clicks a search result.",
+    tags=["Stats"],
+)
+async def api_record_click(body: ClickEventRequest, request: Request):
+    origin_ip = request.client.host if request.client else ""
+    _stats.record_click(
+        query=body.query,
+        category=body.category,
+        position=body.position,
+        url=body.url,
+        title=body.title,
+        engine=body.engine,
+        origin_ip=origin_ip,
+    )
+    return {"ok": True}
+
+
+@router.get(
+    "/stats",
+    response_model=StatsResponse,
+    summary="Get search analytics summary",
+    description="Returns aggregated search and click statistics for the last N days.",
+    tags=["Stats"],
+)
+async def api_get_stats(days: int = Query(7, ge=1, le=365)):
+    return _stats.get_summary(days)
