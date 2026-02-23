@@ -10,6 +10,7 @@ from lxml import html as lxml_html
 
 from app.models import WebResult, ImageResult
 from app.engines.base import SearchEngine, get_http_client
+from app.engines.date_utils import parse_date_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class DuckDuckGoEngine(SearchEngine):
             url = url_els[0]
             content_els = div.xpath('.//a[contains(@class, "result__snippet")]')
             content = content_els[0].text_content().strip() if content_els else ""
-            results.append(WebResult(title=title, url=url, content=content, engine=self.name))
+            results.append(WebResult(title=title, url=url, content=content, engine=self.name, published_date=parse_date_from_text(content)))
 
         return results
 
@@ -106,6 +107,7 @@ class DuckDuckGoEngine(SearchEngine):
                     engine=self.name,
                     width=int(item.get("width", 0) or 0),
                     height=int(item.get("height", 0) or 0),
+                    published_date=parse_date_from_text(str(item.get("age", ""))),
                 ))
 
         return results

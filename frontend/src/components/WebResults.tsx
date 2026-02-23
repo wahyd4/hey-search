@@ -28,6 +28,9 @@ export function WebResults({ results, query = "", category = "web", bookmarkedUr
             />
             <span className="truncate">{new URL(result.url).hostname}</span>
             <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{result.engine}</span>
+            {result.published_date && (
+              <span className="text-xs text-muted-foreground/70">{result.published_date}</span>
+            )}
             {onToggleBookmark && (
               <button
                 onClick={() => onToggleBookmark(result)}

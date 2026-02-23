@@ -10,6 +10,7 @@ from lxml import html as lxml_html
 
 from app.models import WebResult, ImageResult
 from app.engines.base import SearchEngine, get_http_client
+from app.engines.date_utils import parse_date_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +149,13 @@ class BingEngine(SearchEngine):
                 if len(txt) > len(content):
                     content = txt
 
-            results.append(WebResult(title=title, url=url, content=content, engine=self.name))
+            # Try news_dt span (present on news/recent results), fall back to content
+            news_dt = el.xpath('.//span[contains(@class, "news_dt")]')
+            published_date = (
+                parse_date_from_text(news_dt[0].text_content().strip())
+                if news_dt else parse_date_from_text(content)
+            )
+            results.append(WebResult(title=title, url=url, content=content, engine=self.name, published_date=published_date))
 
         # Rate limit detection: Bing silently resets to page 1
         if page > 1 and results:
@@ -215,6 +222,7 @@ class BingEngine(SearchEngine):
                             engine=self.name,
                             width=int(data.get("mw", 0) or 0),
                             height=int(data.get("mh", 0) or 0),
+                            published_date=parse_date_from_text(str(data.get("datePublished", "") or data.get("age", ""))),
                         )
                     )
             except _json.JSONDecodeError:
@@ -260,7 +268,7 @@ class BingEngine(SearchEngine):
 
             desc_els = el.xpath('.//div[contains(@class, "compText")]//p') or el.xpath(".//p")
             content = desc_els[0].text_content().strip() if desc_els else ""
-            results.append(WebResult(title=title, url=url, content=content, engine=self.name))
+            results.append(WebResult(title=title, url=url, content=content, engine=self.name, published_date=parse_date_from_text(content)))
 
         if not results:
             logger.warning("Yahoo fallback returned no results for '%s'", query)

@@ -16,6 +16,7 @@ class WebResult(BaseModel):
     content: str = ""
     engine: str = ""
     rank: int = 0
+    published_date: str = ""  # ISO 8601 date (YYYY-MM-DD) or empty
 
 
 class ImageResult(BaseModel):
@@ -30,6 +31,7 @@ class ImageResult(BaseModel):
     rank: int = 0
     width: int = 0
     height: int = 0
+    published_date: str = ""  # ISO 8601 date (YYYY-MM-DD) or empty
 
 
 class EngineError(BaseModel):

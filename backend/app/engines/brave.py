@@ -9,6 +9,7 @@ from lxml import html as lxml_html
 
 from app.models import WebResult, ImageResult
 from app.engines.base import SearchEngine, get_http_client
+from app.engines.date_utils import parse_date_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,15 @@ class BraveEngine(SearchEngine):
             title = title_els[0].text_content().strip()
             content_els = el.xpath(".//div[contains(concat(' ', @class, ' '), ' content ')]")
             content = content_els[0].text_content().strip() if content_els else ""
-            results.append(WebResult(title=title, url=url, content=content, engine=self.name))
+            # Try to extract date from dedicated age element, fall back to content text
+            date_els = el.xpath(".//div[contains(@class, 'snippet-description')]//time/@datetime") \
+                or el.xpath(".//*[contains(@class, 'age')]")
+            if date_els and isinstance(date_els[0], str):
+                published_date = date_els[0][:10]
+            else:
+                age_text = date_els[0].text_content().strip() if date_els else ""
+                published_date = parse_date_from_text(age_text) or parse_date_from_text(content)
+            results.append(WebResult(title=title, url=url, content=content, engine=self.name, published_date=published_date))
 
         return results
 

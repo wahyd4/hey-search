@@ -14,6 +14,7 @@ from lxml import html as lxml_html
 
 from app.models import WebResult, ImageResult
 from app.engines.base import SearchEngine, get_http_client
+from app.engines.date_utils import parse_date_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,7 @@ class GoogleEngine(SearchEngine):
                         content = txt
                         break
 
-            results.append(WebResult(title=title, url=url, content=content, engine=self.name))
+            results.append(WebResult(title=title, url=url, content=content, engine=self.name, published_date=parse_date_from_text(content)))
 
         if not results:
             logger.warning("Google returned no parseable results for '%s'", query)

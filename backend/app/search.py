@@ -16,6 +16,18 @@ from app import cache
 
 logger = logging.getLogger(__name__)
 
+SortOrder = str  # "default" | "date_asc" | "date_desc"
+
+
+def _apply_sort(results: list, sort: SortOrder) -> None:
+    """Sort results in-place by published_date. Undated results go last."""
+    if sort not in ("date_asc", "date_desc"):
+        return
+    with_date = [r for r in results if r.published_date]
+    no_date = [r for r in results if not r.published_date]
+    with_date.sort(key=lambda r: r.published_date, reverse=(sort == "date_desc"))
+    results[:] = with_date + no_date
+
 # Retry config: 2 retries with exponential backoff (0.5s, 1s)
 RETRY_DECORATOR = retry(
     stop=stop_after_attempt(2),
@@ -60,15 +72,17 @@ async def search(
     page: int = 1,
     engines: list[str] | None = None,
     image_size: str = "",
+    sort: SortOrder = "default",
 ) -> SearchResponse:
     """Search across all enabled engines concurrently, with optional Redis caching."""
     engines_key = ",".join(sorted(engines)) if engines else ""
 
-    # Check cache first
+    # Check cache first (cache stores default-order results; sort applied after)
     cached_data = await cache.get_cached(query, category, page, image_size, engines_key)
     if cached_data is not None:
         resp = SearchResponse(**cached_data)
         resp.cached = True
+        _apply_sort(resp.results, sort)
         return resp
 
     enabled_engines = registry.get_enabled_engines()
@@ -139,9 +153,12 @@ async def search(
         has_next=any(s.result_count > 0 for s in all_stats if s.status == "ok"),
     )
 
-    # Store in cache (only if we got results)
+    # Store in cache before sorting (cache always holds default-order results)
     if unique_results:
         await cache.set_cached(query, category, page, image_size, engines_key, response.model_dump())
+
+    # Apply requested sort order
+    _apply_sort(response.results, sort)
 
     return response
 

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 type Category = "web" | "images";
 type ImageSize = "" | "large" | "medium" | "small";
+type SortOrder = "default" | "date_desc" | "date_asc";
 
 const IMAGE_SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
   { value: "", label: "All sizes" },
@@ -23,7 +24,13 @@ const IMAGE_SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
   { value: "small", label: "Small" },
 ];
 
-function parseUrlState(): { q: string; cat: Category; page: number; imageSize: ImageSize; engines: string } {
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: "default", label: "Default" },
+  { value: "date_desc", label: "Newest" },
+  { value: "date_asc", label: "Oldest" },
+];
+
+function parseUrlState(): { q: string; cat: Category; page: number; imageSize: ImageSize; engines: string; sort: SortOrder } {
   const params = new URLSearchParams(window.location.search);
   const q = params.get("q") ?? "";
   const cat = params.get("category") === "images" ? "images" : "web";
@@ -31,16 +38,19 @@ function parseUrlState(): { q: string; cat: Category; page: number; imageSize: I
   const rawSize = params.get("image_size") ?? "";
   const imageSize: ImageSize = (["large", "medium", "small"].includes(rawSize) ? rawSize : "") as ImageSize;
   const engines = params.get("engines") ?? "";
-  return { q, cat, page, imageSize, engines };
+  const rawSort = params.get("sort") ?? "";
+  const sort: SortOrder = (["date_desc", "date_asc"].includes(rawSort) ? rawSort : "default") as SortOrder;
+  return { q, cat, page, imageSize, engines, sort };
 }
 
-function pushUrl(q: string, cat: Category, page: number, imageSize: ImageSize = "", engines: string = "") {
+function pushUrl(q: string, cat: Category, page: number, imageSize: ImageSize = "", engines: string = "", sort: SortOrder = "default") {
   const params = new URLSearchParams();
   params.set("q", q);
   if (cat !== "web") params.set("category", cat);
   if (page > 1) params.set("page", String(page));
   if (imageSize) params.set("image_size", imageSize);
   if (engines) params.set("engines", engines);
+  if (sort !== "default") params.set("sort", sort);
   const url = `/?${params.toString()}`;
   if (window.location.pathname + window.location.search !== url) {
     window.history.pushState(null, "", url);
@@ -53,6 +63,7 @@ function App() {
   const [category, setCategory] = useState<Category>(initial.cat);
   const [page, setPage] = useState(initial.page);
   const [imageSize, setImageSize] = useState<ImageSize>(initial.imageSize);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initial.sort);
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -155,7 +166,7 @@ function App() {
 
 
   const doSearch = useCallback(
-    async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true) => {
+    async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true, sort: SortOrder = sortOrder) => {
       if (!q.trim()) return;
       setQuery(q);
       setCategory(cat);
@@ -163,9 +174,9 @@ function App() {
       setImageSize(size);
       setLoading(true);
       setHasSearched(true);
-      if (updateUrl) pushUrl(q, cat, p, cat === "images" ? size : "");
+      if (updateUrl) pushUrl(q, cat, p, cat === "images" ? size : "", "", sort);
       try {
-        const res = await apiSearch(q, cat, p, cat === "images" ? size : "");
+        const res = await apiSearch(q, cat, p, cat === "images" ? size : "", sort);
         setResponse(res);
       } catch (err) {
         setResponse({
@@ -185,13 +196,13 @@ function App() {
         setLoading(false);
       }
     },
-    [category, imageSize]
+    [category, imageSize, sortOrder]
   );
 
   // Restore search from URL on initial load
   useEffect(() => {
     if (initial.q) {
-      doSearch(initial.q, initial.cat, initial.page, initial.imageSize, false);
+      doSearch(initial.q, initial.cat, initial.page, initial.imageSize, false, initial.sort);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -214,9 +225,10 @@ function App() {
       setShowGallery(false);
       setShowBookmarks(false);
       setShowStats(false);
-      const { q, cat, page: p, imageSize: size } = parseUrlState();
+      const { q, cat, page: p, imageSize: size, sort } = parseUrlState();
       if (q) {
-        doSearch(q, cat, p, size, false);
+        setSortOrder(sort);
+        doSearch(q, cat, p, size, false, sort);
       } else {
         setHasSearched(false);
         setResponse(null);
@@ -232,7 +244,7 @@ function App() {
 
   const handleCategoryChange = (cat: Category) => {
     setCategory(cat);
-    if (query) doSearch(query, cat, 1, cat === "images" ? imageSize : "");
+    if (query) doSearch(query, cat, 1, cat === "images" ? imageSize : "", true, sortOrder);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -243,7 +255,12 @@ function App() {
 
   const handleImageSizeChange = (size: ImageSize) => {
     setImageSize(size);
-    if (query) doSearch(query, category, 1, size);
+    if (query) doSearch(query, category, 1, size, true, sortOrder);
+  };
+
+  const handleSortChange = (sort: SortOrder) => {
+    setSortOrder(sort);
+    if (query) doSearch(query, category, page, imageSize, true, sort);
   };
 
   const handleGoHome = () => {
@@ -538,6 +555,27 @@ function App() {
               ))}
             </>
           )}
+
+          {/* Sort order — available for both web and images */}
+          <>
+            <div className="mx-2 h-5 w-px bg-border" aria-hidden="true" />
+            <span className="text-xs text-muted-foreground" aria-hidden="true">Sort:</span>
+            {SORT_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => handleSortChange(value)}
+                aria-pressed={sortOrder === value}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  sortOrder === value
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-accent"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </>
         </nav>
       </div>
 

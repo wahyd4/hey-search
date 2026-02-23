@@ -202,6 +202,9 @@ export function ImageResults({ results, query = "", category = "images", bookmar
                 {getSize(selectedIndex) && (
                   <> • {formatSize(getSize(selectedIndex)!.w, getSize(selectedIndex)!.h)}</>
                 )}
+                {selected.published_date && (
+                  <> • <span className="tabular-nums">{selected.published_date}</span></>
+                )}
                 <span className="ml-2 tabular-nums opacity-60">
                   {selectedIndex + 1} / {results.length}
                 </span>

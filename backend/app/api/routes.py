@@ -72,9 +72,10 @@ async def api_search(
     page: int = Query(1, ge=1, le=50, description="Page number"),
     engines: str | None = Query(None, description="Comma-separated engine names to use (e.g. 'google,bing')"),
     image_size: Literal["", "large", "medium", "small"] = Query("", description="Filter images by size (images category only)"),
+    sort: Literal["default", "date_asc", "date_desc"] = Query("default", description="Sort results by publish date"),
 ):
     engine_list = [e.strip() for e in engines.split(",")] if engines else None
-    result = await search(q, category=category, page=page, engines=engine_list, image_size=image_size)
+    result = await search(q, category=category, page=page, engines=engine_list, image_size=image_size, sort=sort)
     origin_ip = request.client.host if request.client else ""
     user_agent = request.headers.get("user-agent", "")
     _stats.record_search(

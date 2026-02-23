@@ -7,6 +7,7 @@ export interface WebResult {
   content: string;
   engine: string;
   rank: number;
+  published_date?: string;
 }
 
 export interface ImageResult {
@@ -20,6 +21,7 @@ export interface ImageResult {
   rank: number;
   width: number;
   height: number;
+  published_date?: string;
 }
 
 export interface EngineError {
@@ -70,10 +72,12 @@ export async function search(
   query: string,
   category: "web" | "images" = "web",
   page: number = 1,
-  imageSize: string = ""
+  imageSize: string = "",
+  sort: string = "default"
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ q: query, category, page: String(page) });
   if (imageSize) params.set("image_size", imageSize);
+  if (sort !== "default") params.set("sort", sort);
   const resp = await fetch(`${API_BASE}/search?${params}`);
   if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
   return resp.json();
