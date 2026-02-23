@@ -146,6 +146,7 @@ export async function removeExcludedDomain(domain: string): Promise<string[]> {
 export interface AppSettings {
   cache_ttl_hours: number;
   cache_available: boolean;
+  redis_url: string;
 }
 
 export async function getSettings(): Promise<AppSettings> {
@@ -154,7 +155,7 @@ export async function getSettings(): Promise<AppSettings> {
   return resp.json();
 }
 
-export async function updateSettings(settings: { cache_ttl_hours: number }): Promise<AppSettings> {
+export async function updateSettings(settings: { cache_ttl_hours?: number; redis_url?: string }): Promise<AppSettings> {
   const resp = await fetch(`${API_BASE}/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

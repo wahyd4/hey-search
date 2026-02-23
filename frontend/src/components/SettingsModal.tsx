@@ -246,12 +246,16 @@ function CacheTab() {
   const [flushing, setFlushing] = useState(false);
   const [flushMsg, setFlushMsg] = useState("");
   const [ttl, setTtl] = useState(6);
+  const [redisUrl, setRedisUrl] = useState("");
+  const [urlSaving, setUrlSaving] = useState(false);
+  const [urlMsg, setUrlMsg] = useState("");
 
   useEffect(() => {
     getSettings()
       .then((s) => {
         setSettings(s);
         setTtl(s.cache_ttl_hours);
+        setRedisUrl(s.redis_url);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -266,6 +270,20 @@ function CacheTab() {
       console.error("Failed to update cache TTL:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUrlSave = async () => {
+    setUrlSaving(true);
+    setUrlMsg("");
+    try {
+      const updated = await updateSettings({ redis_url: redisUrl.trim() });
+      setSettings(updated);
+      setUrlMsg(updated.cache_available ? "Connected ✓" : redisUrl.trim() ? "Connection failed" : "Disconnected");
+    } catch {
+      setUrlMsg("Failed to save");
+    } finally {
+      setUrlSaving(false);
     }
   };
 
@@ -286,22 +304,46 @@ function CacheTab() {
 
   return (
     <div className="space-y-5">
+      {/* Redis URL configuration */}
       <div>
         <div className="flex items-center gap-2 mb-1">
           <Database className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <p className="text-sm font-medium">Redis Cache</p>
+          <p className="text-sm font-medium">Redis Connection</p>
         </div>
-        <p className="text-sm text-muted-foreground mb-3">
-          {settings?.cache_available
-            ? "Redis is connected. Repeated searches are served from cache."
-            : "Redis is not configured. Set REDIS_URL to enable caching."}
+        <p className="text-xs text-muted-foreground mb-2">
+          Enter a Redis URL to enable search result caching (e.g. redis://localhost:6379).
         </p>
-        <div className={cn("rounded-lg border p-1 inline-flex items-center", !settings?.cache_available && "opacity-50 pointer-events-none")}>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={redisUrl}
+            onChange={(e) => { setRedisUrl(e.target.value); setUrlMsg(""); }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleUrlSave(); }}
+            placeholder="redis://host:port"
+            className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            aria-label="Redis URL"
+          />
+          <button
+            onClick={handleUrlSave}
+            disabled={urlSaving}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            {urlSaving ? "Saving…" : "Save"}
+          </button>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
           <span className={cn(
-            "inline-block h-2 w-2 rounded-full mr-2 ml-1",
+            "inline-block h-2 w-2 rounded-full",
             settings?.cache_available ? "bg-green-500" : "bg-muted-foreground"
           )} />
-          <span className="text-xs text-muted-foreground mr-2">{settings?.cache_available ? "Connected" : "Disconnected"}</span>
+          <span className="text-xs text-muted-foreground">
+            {settings?.cache_available ? "Connected" : "Disconnected"}
+          </span>
+          {urlMsg && (
+            <span className={cn("text-xs font-medium", urlMsg.includes("✓") ? "text-green-600 dark:text-green-400" : urlMsg === "Disconnected" ? "text-muted-foreground" : "text-destructive")}>
+              — {urlMsg}
+            </span>
+          )}
         </div>
       </div>
 

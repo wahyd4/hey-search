@@ -12,7 +12,7 @@ from app.search import search, get_autocomplete
 from app.engines import registry
 from app.excluded import get_excluded_domains, add_excluded_domain, remove_excluded_domain
 from app.settings import get_all_settings, get_setting, set_setting
-from app.cache import is_cache_available, flush_cache
+from app.cache import is_cache_available, flush_cache, reconnect_redis
 
 router = APIRouter()
 
@@ -236,10 +236,12 @@ async def api_remove_excluded_domain(domain: str):
 class SettingsResponse(BaseModel):
     cache_ttl_hours: float = Field(description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
     cache_available: bool = Field(description="Whether Redis is connected and available")
+    redis_url: str = Field(default="", description="Redis connection URL (e.g. redis://localhost:6379)")
 
 
 class UpdateSettingsRequest(BaseModel):
-    cache_ttl_hours: float = Field(ge=0, le=168, description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
+    cache_ttl_hours: float | None = Field(default=None, ge=0, le=168, description="Cache TTL in hours (0 = disabled, max 168 = 1 week)")
+    redis_url: str | None = Field(default=None, description="Redis connection URL (empty string to disconnect)")
 
 
 @router.get(
@@ -260,6 +262,7 @@ async def api_get_settings():
     return SettingsResponse(
         cache_ttl_hours=float(settings.get("cache_ttl_hours", "6")),
         cache_available=is_cache_available(),
+        redis_url=settings.get("redis_url", ""),
     )
 
 
@@ -279,10 +282,16 @@ curl -X PUT '$BASE_URL/api/settings' \\
     tags=["Settings"],
 )
 async def api_update_settings(body: UpdateSettingsRequest):
-    set_setting("cache_ttl_hours", str(body.cache_ttl_hours))
+    if body.cache_ttl_hours is not None:
+        set_setting("cache_ttl_hours", str(body.cache_ttl_hours))
+    if body.redis_url is not None:
+        set_setting("redis_url", body.redis_url)
+        await reconnect_redis(body.redis_url)
+    settings = get_all_settings()
     return SettingsResponse(
-        cache_ttl_hours=body.cache_ttl_hours,
+        cache_ttl_hours=float(settings.get("cache_ttl_hours", "6")),
         cache_available=is_cache_available(),
+        redis_url=settings.get("redis_url", ""),
     )
 
 

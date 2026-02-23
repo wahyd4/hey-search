@@ -22,11 +22,25 @@ _available: bool = False
 
 
 async def init_redis() -> None:
-    """Try to connect to Redis. If it fails, caching is silently disabled."""
+    """Try to connect to Redis using DB setting first, then env var fallback."""
+    from app.settings import get_setting
+    url = get_setting("redis_url") or os.environ.get("REDIS_URL", "")
+    await reconnect_redis(url)
+
+
+async def reconnect_redis(url: str) -> None:
+    """Connect (or reconnect) to Redis at the given URL."""
     global _redis, _available
-    url = os.environ.get("REDIS_URL", "")
+    # Close existing connection first
+    if _redis:
+        try:
+            await _redis.aclose()
+        except Exception:
+            pass
+        _redis = None
+        _available = False
     if not url:
-        logger.info("REDIS_URL not set — caching disabled")
+        logger.info("Redis URL not set — caching disabled")
         return
     try:
         _redis = aioredis.from_url(url, decode_responses=True, socket_connect_timeout=3)

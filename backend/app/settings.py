@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 # Default values
 DEFAULTS: dict[str, str] = {
     "cache_ttl_hours": "6",
+    "redis_url": "",
 }
 
 
