@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 _engines: dict[str, "SearchEngine"] = {}
 _enabled: dict[str, bool] = {}
+_order: list[str] = []  # engine names in priority order
 
 
 def load_default_engines() -> None:
@@ -28,6 +29,9 @@ def load_default_engines() -> None:
         _engines[engine.name] = engine
         _enabled[engine.name] = True
 
+    # Default priority: privacy-first (Brave → DuckDuckGo → Google → Bing)
+    _order.extend(_engines.keys())
+
     logger.info("Loaded %d engines: %s", len(_engines), list(_engines.keys()))
 
 
@@ -35,8 +39,24 @@ def get_engine(name: str) -> "SearchEngine | None":
     return _engines.get(name)
 
 
+def get_engine_order() -> list[str]:
+    """Return engine names in current priority order."""
+    return list(_order)
+
+
+def set_engine_order(order: list[str]) -> None:
+    """Set engine priority order. Unknown names are ignored; missing engines appended at end."""
+    known = set(_engines.keys())
+    new_order = [name for name in order if name in known]
+    for name in _order:
+        if name not in new_order:
+            new_order.append(name)
+    _order[:] = new_order
+
+
 def get_enabled_engines() -> list["SearchEngine"]:
-    return [e for e in _engines.values() if _enabled.get(e.name, True)]
+    """Return enabled engines in configured priority order."""
+    return [_engines[name] for name in _order if name in _engines and _enabled.get(name, True)]
 
 
 def get_all_engine_info() -> list[EngineInfo]:
@@ -47,8 +67,10 @@ def get_all_engine_info() -> list[EngineInfo]:
             enabled=_enabled.get(e.name, True),
             supports_web=e.supports_web,
             supports_images=e.supports_images,
+            order=i,
         )
-        for e in _engines.values()
+        for i, name in enumerate(_order)
+        if (e := _engines.get(name))
     ]
 
 

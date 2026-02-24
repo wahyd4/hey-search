@@ -61,6 +61,7 @@ export interface EngineInfo {
   enabled: boolean;
   supports_web: boolean;
   supports_images: boolean;
+  order: number;
 }
 
 export interface AutocompleteResponse {
@@ -107,6 +108,16 @@ export async function toggleEngine(
     body: JSON.stringify({ enabled }),
   });
   if (!resp.ok) throw new Error("Failed to toggle engine");
+  return resp.json();
+}
+
+export async function reorderEngines(order: string[]): Promise<EngineInfo[]> {
+  const resp = await fetch(`${API_BASE}/engines/order`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ order }),
+  });
+  if (!resp.ok) throw new Error("Failed to reorder engines");
   return resp.json();
 }
 

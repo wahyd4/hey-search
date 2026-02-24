@@ -75,6 +75,7 @@ class EngineInfo(BaseModel):
     enabled: bool = True
     supports_web: bool = True
     supports_images: bool = True
+    order: int = 0
 
 
 class APIError(BaseModel):

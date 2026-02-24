@@ -212,6 +212,22 @@ async def api_list_engines():
     return registry.get_all_engine_info()
 
 
+class EngineOrderRequest(BaseModel):
+    order: list[str]
+
+
+@router.put(
+    "/engines/order",
+    response_model=list[EngineInfo],
+    summary="Reorder search engines",
+    description="Set the global engine priority order. Pass a list of engine names; results will be grouped by engine in this order.",
+    tags=["Engines"],
+)
+async def api_reorder_engines(body: EngineOrderRequest):
+    registry.set_engine_order(body.order)
+    return registry.get_all_engine_info()
+
+
 class EngineToggleRequest(BaseModel):
     enabled: bool
 
