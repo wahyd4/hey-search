@@ -166,7 +166,7 @@ export function History({
 
                     {/* Clickable query */}
                     <button
-                      className="flex-1 text-left text-sm font-medium truncate hover:text-primary focus-visible:outline-none focus-visible:underline"
+                      className="flex-1 text-left text-sm font-medium truncate cursor-pointer hover:text-primary focus-visible:outline-none focus-visible:underline"
                       onClick={() => onSearch(entry.query, entry.category)}
                       title={entry.query}
                     >
