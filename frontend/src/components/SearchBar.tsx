@@ -80,7 +80,7 @@ export function SearchBar({ initialQuery = "", onSearch, className }: SearchBarP
           aria-activedescendant={selectedIndex >= 0 ? `suggestion-${selectedIndex}` : undefined}
           className="w-full rounded-full border border-input bg-background px-10 py-3 text-base shadow-sm
                      placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-                     sm:text-lg"
+                     sm:text-lg [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
         />
         {query && (
           <button
