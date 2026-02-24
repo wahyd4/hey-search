@@ -120,6 +120,13 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.include_router(router, prefix="/api")
 
+# Alias /search → /api/search for compatibility with external clients
+@app.api_route("/search", methods=["GET", "POST"], include_in_schema=False)
+async def search_root_alias(request: Request):
+    url = request.url.replace(path="/api/search")
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=str(url), status_code=307)
+
 # Serve frontend static files if they exist (production / Docker)
 static_dir = Path(__file__).resolve().parent.parent / "static"
 if static_dir.is_dir():

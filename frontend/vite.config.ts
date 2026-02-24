@@ -28,6 +28,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': { target: 'http://localhost:8000', ...forwardHost() },
+      '/search': {
+        target: 'http://localhost:8000',
+        rewrite: (path) => path.replace(/^\/search/, '/api/search'),
+        ...forwardHost(),
+      },
       '/docs': { target: 'http://localhost:8000', ...forwardHost() },
       '/redoc': { target: 'http://localhost:8000', ...forwardHost() },
       '/openapi.json': { target: 'http://localhost:8000', ...forwardHost() },
