@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Settings, BookmarkIcon, Images, ExternalLink, BarChart2 } from "lucide-react";
+import { Menu, X, Settings, BookmarkIcon, Images, ExternalLink, BarChart2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
@@ -8,6 +8,7 @@ interface AppHeaderProps {
   onShowBookmarks: () => void;
   onShowGallery: () => void;
   onShowStats: () => void;
+  onShowHistory?: () => void;
   /** Hides the logo button (used on the home page) */
   hideLogo?: boolean;
   /** Transparent header overlay (home page with background image) */
@@ -21,6 +22,7 @@ interface AppHeaderProps {
 const NAV_ITEMS = [
   { id: "docs",      icon: ExternalLink, label: "API Docs",    href: "/docs" },
   { id: "stats",     icon: BarChart2,    label: "Stats",       href: null },
+  { id: "history",   icon: Clock,        label: "History",     href: null },
   { id: "gallery",   icon: Images,       label: "Backgrounds", href: null },
   { id: "bookmarks", icon: BookmarkIcon, label: "Bookmarks",   href: null },
   { id: "settings",  icon: Settings,     label: "Settings",    href: null },
@@ -34,6 +36,7 @@ export function AppHeader({
   onShowBookmarks,
   onShowGallery,
   onShowStats,
+  onShowHistory,
   hideLogo = false,
   transparent = false,
   children,
@@ -44,10 +47,11 @@ export function AppHeader({
   const close = () => setMenuOpen(false);
 
   const actions: Record<string, () => void> = {
-    settings:  () => { onShowSettings();  close(); },
-    bookmarks: () => { onShowBookmarks(); close(); },
-    gallery:   () => { onShowGallery();   close(); },
-    stats:     () => { onShowStats();     close(); },
+    settings:  () => { onShowSettings();           close(); },
+    bookmarks: () => { onShowBookmarks();           close(); },
+    gallery:   () => { onShowGallery();             close(); },
+    stats:     () => { onShowStats();               close(); },
+    history:   () => { onShowHistory?.();           close(); },
     docs:      close,
   };
 

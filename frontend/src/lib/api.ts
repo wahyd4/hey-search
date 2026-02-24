@@ -318,3 +318,33 @@ export async function fetchStats(days = 7): Promise<StatsSummary> {
   if (!resp.ok) throw new Error("Failed to fetch stats");
   return resp.json();
 }
+
+// --- History ---
+
+export interface HistoryEntry {
+  id: number;
+  query: string;
+  category: string;
+  ts: string;
+}
+
+export interface HistoryResponse {
+  entries: HistoryEntry[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export async function getHistory(page = 1, perPage = 50): Promise<HistoryResponse> {
+  const resp = await fetch(`${API_BASE}/history?page=${page}&per_page=${perPage}`);
+  if (!resp.ok) throw new Error("Failed to fetch history");
+  return resp.json();
+}
+
+export async function deleteHistoryEntry(id: number): Promise<void> {
+  await fetch(`${API_BASE}/history/${id}`, { method: "DELETE" });
+}
+
+export async function clearHistory(): Promise<void> {
+  await fetch(`${API_BASE}/history`, { method: "DELETE" });
+}

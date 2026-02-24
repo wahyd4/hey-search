@@ -10,6 +10,7 @@ import { BackgroundGallery } from "@/components/BackgroundGallery";
 import { Bookmarks } from "@/components/Bookmarks";
 import { AppHeader } from "@/components/AppHeader";
 import { StatsPage } from "@/components/StatsPage";
+import { History } from "@/components/History";
 import { search as apiSearch, isImageResult, getBackground, refreshBackground, getBookmarkedUrls, addBookmark, removeBookmarkByUrl, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +72,7 @@ function App() {
   const [showGallery, setShowGallery] = useState(window.location.pathname === "/backgrounds");
   const [showBookmarks, setShowBookmarks] = useState(window.location.pathname === "/bookmarks");
   const [showStats, setShowStats] = useState(window.location.pathname === "/stats");
+  const [showHistory, setShowHistory] = useState(window.location.pathname === "/history");
   const statusRef = useRef<HTMLDivElement>(null);
 
   // Background image state
@@ -87,7 +89,7 @@ function App() {
   }, []);
 
   const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
-  const isHome = !hasSearched && !showGallery && !showBookmarks && !showStats;
+  const isHome = !hasSearched && !showGallery && !showBookmarks && !showStats && !showHistory;
 
   // iOS Safari fills top/bottom browser areas from page background color,
   // so sample image edge colors to avoid white/black bars.
@@ -211,20 +213,25 @@ function App() {
   useEffect(() => {
     const onPopState = () => {
       if (window.location.pathname === "/backgrounds") {
-        setShowGallery(true); setShowBookmarks(false); setShowStats(false);
+        setShowGallery(true); setShowBookmarks(false); setShowStats(false); setShowHistory(false);
         return;
       }
       if (window.location.pathname === "/bookmarks") {
-        setShowBookmarks(true); setShowGallery(false); setShowStats(false);
+        setShowBookmarks(true); setShowGallery(false); setShowStats(false); setShowHistory(false);
         return;
       }
       if (window.location.pathname === "/stats") {
-        setShowStats(true); setShowGallery(false); setShowBookmarks(false);
+        setShowStats(true); setShowGallery(false); setShowBookmarks(false); setShowHistory(false);
+        return;
+      }
+      if (window.location.pathname === "/history") {
+        setShowHistory(true); setShowGallery(false); setShowBookmarks(false); setShowStats(false);
         return;
       }
       setShowGallery(false);
       setShowBookmarks(false);
       setShowStats(false);
+      setShowHistory(false);
       const { q, cat, page: p, imageSize: size, sort } = parseUrlState();
       if (q) {
         setSortOrder(sort);
@@ -271,6 +278,7 @@ function App() {
     setShowGallery(false);
     setShowBookmarks(false);
     setShowStats(false);
+    setShowHistory(false);
     window.history.pushState(null, "", "/");
     getBackground().then(setBgInfo).catch(() => {});
   };
@@ -291,6 +299,7 @@ function App() {
     setShowGallery(true);
     setShowBookmarks(false);
     setShowStats(false);
+    setShowHistory(false);
     window.history.pushState(null, "", "/backgrounds");
   };
 
@@ -298,6 +307,7 @@ function App() {
     setShowBookmarks(true);
     setShowGallery(false);
     setShowStats(false);
+    setShowHistory(false);
     window.history.pushState(null, "", "/bookmarks");
   };
 
@@ -305,7 +315,21 @@ function App() {
     setShowStats(true);
     setShowGallery(false);
     setShowBookmarks(false);
+    setShowHistory(false);
     window.history.pushState(null, "", "/stats");
+  };
+
+  const handleShowHistory = () => {
+    setShowHistory(true);
+    setShowGallery(false);
+    setShowBookmarks(false);
+    setShowStats(false);
+    window.history.pushState(null, "", "/history");
+  };
+
+  const handleHistorySearch = (q: string, cat: string) => {
+    handleGoHome();
+    doSearch(q, cat as "web" | "images", 1, "", true, "default");
   };
 
   const handleToggleBookmark = async (result: WebResult | ImageResult) => {
@@ -345,7 +369,7 @@ function App() {
   // Gallery page
   if (showGallery) {
     return <>
-      <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} onShowStats={handleShowStats} />
+      <BackgroundGallery onBack={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowBookmarks={handleShowBookmarks} onShowStats={handleShowStats} onShowHistory={handleShowHistory} />
       {settingsModal}
     </>;
   }
@@ -353,7 +377,7 @@ function App() {
   // Bookmarks page
   if (showBookmarks) {
     return <>
-      <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} onShowStats={handleShowStats} />
+      <Bookmarks onGoHome={handleGoHome} onShowSettings={() => setShowSettings(true)} onShowGallery={handleShowGallery} onShowStats={handleShowStats} onShowHistory={handleShowHistory} />
       {settingsModal}
     </>;
   }
@@ -362,6 +386,21 @@ function App() {
   if (showStats) {
     return <>
       <StatsPage onGoHome={handleGoHome} />
+      {settingsModal}
+    </>;
+  }
+
+  // History page
+  if (showHistory) {
+    return <>
+      <History
+        onGoHome={handleGoHome}
+        onShowSettings={() => setShowSettings(true)}
+        onShowBookmarks={handleShowBookmarks}
+        onShowGallery={handleShowGallery}
+        onShowStats={handleShowStats}
+        onSearch={handleHistorySearch}
+      />
       {settingsModal}
     </>;
   }
@@ -392,6 +431,7 @@ function App() {
             onShowBookmarks={handleShowBookmarks}
             onShowGallery={handleShowGallery}
             onShowStats={handleShowStats}
+            onShowHistory={handleShowHistory}
             transparent={!!bgUrl}
             hideLogo
           />
@@ -506,6 +546,7 @@ function App() {
         onShowBookmarks={handleShowBookmarks}
         onShowGallery={handleShowGallery}
         onShowStats={handleShowStats}
+        onShowHistory={handleShowHistory}
       >
         <SearchBar initialQuery={query} onSearch={(q) => doSearch(q)} />
       </AppHeader>

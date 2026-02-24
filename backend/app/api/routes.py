@@ -13,6 +13,7 @@ from app.engines import registry
 from app.excluded import get_excluded_domains, add_excluded_domain, remove_excluded_domain
 from app.settings import get_all_settings, get_setting, set_setting
 from app.cache import is_cache_available, flush_cache, reconnect_redis
+from app.history import get_history, delete_history_entry, clear_history
 from app import stats as _stats
 
 router = APIRouter()
@@ -132,7 +133,67 @@ async def api_autocomplete(
     return AutocompleteResponse(query=q, suggestions=suggestions)
 
 
-# --- Engine Management ---
+# --- History ---
+
+class HistoryEntry(BaseModel):
+    id: int
+    query: str
+    category: str
+    ts: str
+
+
+class HistoryResponse(BaseModel):
+    entries: list[HistoryEntry]
+    total: int
+    page: int
+    per_page: int
+
+
+@router.get(
+    "/history",
+    response_model=HistoryResponse,
+    summary="Get search history",
+    description="Returns paginated search history ordered by most recent first.",
+    tags=["Search"],
+)
+async def api_get_history(
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=1, le=200, description="Results per page"),
+):
+    entries, total = get_history(page, per_page)
+    return HistoryResponse(
+        entries=[HistoryEntry(**e) for e in entries],
+        total=total,
+        page=page,
+        per_page=per_page,
+    )
+
+
+@router.delete(
+    "/history",
+    summary="Clear all search history",
+    tags=["Search"],
+)
+async def api_clear_history():
+    count = clear_history()
+    return {"deleted": count}
+
+
+@router.delete(
+    "/history/{entry_id}",
+    summary="Delete a single history entry",
+    tags=["Search"],
+    responses={404: {"model": APIError, "description": "Entry not found"}},
+)
+async def api_delete_history_entry(entry_id: int):
+    if not delete_history_entry(entry_id):
+        return JSONResponse(
+            status_code=404,
+            content=APIError(code="not_found", message=f"History entry {entry_id} not found").model_dump(),
+        )
+    return {"ok": True}
+
+
 
 @router.get(
     "/engines",
