@@ -1,3 +1,5 @@
+# Portions derived from SearXNG <https://github.com/searxng/searxng>
+# Copyright (C) 2021-2024 SearXNG Contributors
 """Google Search engine — using SearXNG's async progressive response approach."""
 
 from __future__ import annotations

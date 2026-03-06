@@ -1,0 +1,28 @@
+Hey Search
+Copyright (C) 2026 Junwei Zhao
+
+This project is licensed under the GNU Affero General Public License v3.0 or later.
+See the LICENSE file for the full license text.
+
+-------------------------------------------------------------------------------
+Third-Party Attributions
+-------------------------------------------------------------------------------
+
+SearXNG
+  Home:    https://github.com/searxng/searxng
+  License: GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)
+  Copyright (C) 2021-2024 SearXNG Contributors
+
+  The following files contain code patterns derived from SearXNG:
+
+  - backend/app/engines/google.py
+      * Async progressive response approach (asearch=arc parameter)
+      * arc_id generation algorithm and hourly-refresh pattern
+      * Google Search App (GSA) user-agent string
+      * HTML parsing selectors for result containers (MjjYud, data-sncf)
+      * Base64-encoded thumbnail extraction
+
+  - backend/app/engines/bing.py
+      * Pagination parameter scheme (FORM=PERE / PERE{n-2})
+      * Base64 redirect URL decoding (/ck/a? format, "a1" prefix strip)
+      * CAPTCHA detection heuristics
