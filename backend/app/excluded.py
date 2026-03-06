@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Junwei Zhao
 """SQLite-backed storage for excluded domains."""
 
 from __future__ import annotations

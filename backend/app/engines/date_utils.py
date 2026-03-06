@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Junwei Zhao
 """Date extraction utilities for search engine result snippets."""
 
 from __future__ import annotations

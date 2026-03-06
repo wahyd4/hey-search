@@ -1,5 +1,7 @@
 # Hey Search
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 A privacy-respecting [metasearch engine](https://en.wikipedia.org/wiki/Metasearch_engine) that aggregates results from multiple search engines.
 
 Inspired by [SearXNG](https://github.com/searxng/searxng).
@@ -107,3 +109,15 @@ The `/app/data` volume stores the SQLite database (engine settings, excluded dom
 ## Features
 
 See [FEATURES.md](FEATURES.md) for the full feature list.
+
+## License
+
+Hey Search is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-or-later).
+
+This project was inspired by and incorporates techniques from
+[SearXNG](https://github.com/searxng/searxng) (AGPL-3.0). See [NOTICE](NOTICE)
+for details on third-party attributions.
+
+> **AGPL-3.0 in plain English:** You can use, modify, and deploy this software
+> freely. If you run a modified version as a public network service, you must
+> make your modified source code available to your users.
