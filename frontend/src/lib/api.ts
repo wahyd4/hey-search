@@ -359,3 +359,17 @@ export async function deleteHistoryEntry(id: number): Promise<void> {
 export async function clearHistory(): Promise<void> {
   await fetch(`${API_BASE}/history`, { method: "DELETE" });
 }
+
+// --- Version ---
+
+export interface VersionInfo {
+  version: string;
+  commit: string;
+  local: string; // "true" | "false"
+}
+
+export async function getVersion(): Promise<VersionInfo> {
+  const resp = await fetch(`${API_BASE}/version`);
+  if (!resp.ok) throw new Error("Failed to fetch version");
+  return resp.json();
+}

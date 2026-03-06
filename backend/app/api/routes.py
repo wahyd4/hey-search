@@ -15,6 +15,7 @@ from app.settings import get_all_settings, get_setting, set_setting
 from app.cache import is_cache_available, flush_cache, reconnect_redis
 from app.history import get_history, delete_history_entry, clear_history
 from app import stats as _stats
+from app.version import get_version_info
 
 router = APIRouter()
 
@@ -690,3 +691,10 @@ async def api_record_click(body: ClickEventRequest, request: Request):
 )
 async def api_get_stats(days: int = Query(7, ge=1, le=365)):
     return _stats.get_summary(days)
+
+
+# --- Version ---
+
+@router.get("/version", summary="App version", tags=["System"])
+async def api_version():
+    return get_version_info()

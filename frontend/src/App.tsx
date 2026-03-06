@@ -11,7 +11,7 @@ import { Bookmarks } from "@/components/Bookmarks";
 import { AppHeader } from "@/components/AppHeader";
 import { StatsPage } from "@/components/StatsPage";
 import { History } from "@/components/History";
-import { search as apiSearch, isImageResult, getBackground, refreshBackground, getBookmarkedUrls, addBookmark, removeBookmarkByUrl, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo } from "@/lib/api";
+import { search as apiSearch, isImageResult, getBackground, refreshBackground, getBookmarkedUrls, addBookmark, removeBookmarkByUrl, getVersion, type SearchResponse, type WebResult, type ImageResult, type BackgroundInfo, type VersionInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Category = "web" | "images";
@@ -82,10 +82,14 @@ function App() {
   // Bookmarked URLs for toggle state
   const [bookmarkedUrls, setBookmarkedUrls] = useState<Set<string>>(new Set());
 
-  // Fetch background and bookmarked URLs on mount
+  // App version
+  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
+
+  // Fetch background, bookmarked URLs, and version on mount
   useEffect(() => {
     getBackground().then(setBgInfo).catch(() => {});
     getBookmarkedUrls().then(setBookmarkedUrls).catch(() => {});
+    getVersion().then(setVersionInfo).catch(() => {});
   }, []);
 
   const bgUrl = bgInfo?.enabled && bgInfo?.url ? bgInfo.url : null;
@@ -704,7 +708,16 @@ function App() {
 
       {/* Footer */}
       <footer className="border-t px-4 py-3 text-xs text-muted-foreground">
-        <div className="mx-auto max-w-6xl text-center">Hey Search</div>
+        <div className="mx-auto max-w-6xl text-center">
+          Hey Search
+          {versionInfo && (
+            <span className="ml-1.5 opacity-60">
+              {versionInfo.local === "true"
+                ? `local · ${versionInfo.commit}`
+                : versionInfo.version}
+            </span>
+          )}
+        </div>
       </footer>
 
       {/* Error toasts */}
