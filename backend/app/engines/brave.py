@@ -80,13 +80,19 @@ class BraveEngine(SearchEngine):
 
         for el in dom.xpath("//div[contains(@class, 'img-card')]"):
             img_els = el.xpath(".//img/@src")
-            link_els = el.xpath(".//a/@href")
             title_els = el.xpath(".//span[contains(@class, 'title')]")
-            if not img_els or not link_els:
+            if not img_els:
+                continue
+            # Prefer links that don't wrap an <img> — those are source page links.
+            # Links that wrap an <img> point directly to the image file, not the page.
+            page_links = el.xpath(".//a[not(.//img)]/@href")
+            all_links = el.xpath(".//a/@href")
+            page_url = (page_links or all_links or [""])[0]
+            if not page_url:
                 continue
             results.append(ImageResult(
                 title=title_els[0].text_content().strip() if title_els else "",
-                url=link_els[0],
+                url=page_url,
                 img_src=img_els[0],
                 thumbnail_src=img_els[0],
                 source="Brave",
