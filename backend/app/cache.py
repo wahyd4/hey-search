@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (C) 2026 Junwei Zhao
 """Optional Redis cache for search results.
 
 When REDIS_URL is not set or Redis is unreachable, all operations

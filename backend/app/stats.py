@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (C) 2026 Junwei Zhao
 """Search analytics – persisted in a local SQLite database."""
 
 from __future__ import annotations

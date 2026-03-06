@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (C) 2026 Junwei Zhao
 """Search orchestrator - coordinates searches across multiple engines concurrently."""
 
 from __future__ import annotations

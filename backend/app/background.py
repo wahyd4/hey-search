@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (C) 2026 Junwei Zhao
 """Background image management — fetch from Unsplash, cache locally."""
 
 from __future__ import annotations

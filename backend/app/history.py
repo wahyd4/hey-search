@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (C) 2026 Junwei Zhao
 """Search history – reads from the stats search_events table."""
 
 from __future__ import annotations
