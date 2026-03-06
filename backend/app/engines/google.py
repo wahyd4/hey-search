@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (C) 2026 Junwei Zhao
 # Portions derived from SearXNG <https://github.com/searxng/searxng>
 # Copyright (C) 2021-2024 SearXNG Contributors
 """Google Search engine — using SearXNG's async progressive response approach."""
