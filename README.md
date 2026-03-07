@@ -53,13 +53,12 @@ just dev
 REDIS_URL=redis://192.168.1.2:6399 just dev
 ```
 
-### 2. Docker (production)
+### 2. Docker
 
 ```bash
-docker build -t hey-search .
 
 # Basic — data stored in anonymous volume
-docker run -p 8000:8000 hey-search
+docker run -p 8000:8000  ghcr.io/wahyd4/hey-search
 
 # Recommended — mount data directory for persistence
 docker run -p 8000:8000 -v ./hey-search-data:/app/data hey-search
