@@ -557,7 +557,7 @@ function App() {
 
       {/* Category / filter bar */}
       <div className="sticky top-[57px] z-30 border-b bg-background/95 backdrop-blur">
-        <nav aria-label="Search categories" className="flex items-center gap-1 px-4 py-2">
+        <nav aria-label="Search categories" className="flex items-center gap-1 px-4 py-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {([
             { key: "web" as const, label: "Web", icon: Globe },
             { key: "images" as const, label: "Images", icon: ImageIcon },
@@ -567,7 +567,7 @@ function App() {
               onClick={() => handleCategoryChange(key)}
               aria-current={category === key ? "page" : undefined}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                "shrink-0 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 category === key
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent"
@@ -581,15 +581,15 @@ function App() {
           {/* Image size filter — only visible in images category */}
           {category === "images" && (
             <>
-              <div className="mx-2 h-5 w-px bg-border" aria-hidden="true" />
-              <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+              <div className="mx-2 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
               {IMAGE_SIZE_OPTIONS.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => handleImageSizeChange(value)}
                   aria-pressed={imageSize === value}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     imageSize === value
                       ? "bg-secondary text-secondary-foreground"
                       : "text-muted-foreground hover:bg-accent"
@@ -603,15 +603,15 @@ function App() {
 
           {/* Sort order — available for both web and images */}
           <>
-            <div className="mx-2 h-5 w-px bg-border" aria-hidden="true" />
-            <span className="text-xs text-muted-foreground" aria-hidden="true">Sort:</span>
+            <div className="mx-2 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+            <span className="shrink-0 text-xs text-muted-foreground" aria-hidden="true">Sort:</span>
             {SORT_OPTIONS.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => handleSortChange(value)}
                 aria-pressed={sortOrder === value}
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   sortOrder === value
                     ? "bg-secondary text-secondary-foreground"
                     : "text-muted-foreground hover:bg-accent"

@@ -106,7 +106,8 @@ export function AppHeader({
             className="shrink-0 text-xl font-bold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded"
             style={{ color: "#27ae60" }}
           >
-            HeySearch
+            <span className="sm:hidden">HS</span>
+            <span className="hidden sm:inline">HeySearch</span>
           </button>
         )}
 
