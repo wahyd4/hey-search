@@ -1,6 +1,7 @@
 """HeySearch - A metasearch engine."""
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -14,11 +15,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.engines import registry
 from app.excluded import init_db
-from app.settings import init_settings_table
+from app.settings import init_settings_table, set_setting
 from app.cache import init_redis, close_redis
 from app.bookmarks import init_bookmarks_table
 from app.stats import init_db as init_stats_db
 from app.models import APIError
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -27,6 +30,15 @@ async def lifespan(application: FastAPI):
     init_settings_table()
     init_bookmarks_table()
     init_stats_db()
+
+    # If REDIS_URL is provided via environment, persist it to the DB so it
+    # shows up in the settings UI and takes effect even if the DB had a
+    # different (or empty) value.
+    env_redis_url = os.environ.get("REDIS_URL", "").strip()
+    if env_redis_url:
+        set_setting("redis_url", env_redis_url)
+        logger.info("REDIS_URL from environment saved to settings: %s", env_redis_url)
+
     registry.load_default_engines()
     await init_redis()
     yield
