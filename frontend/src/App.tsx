@@ -450,7 +450,7 @@ function App() {
                     ? "bg-gradient-to-r from-white to-white/90"
                     : "bg-gradient-to-r from-blue-600 to-purple-600"
                 )}>
-                  Hey Search
+                  HeySearch
                 </span>
               </h1>
               <p className={cn("mt-2", bgUrl ? "text-white/70" : "text-muted-foreground")}>
@@ -709,7 +709,7 @@ function App() {
       {/* Footer */}
       <footer className="border-t px-4 py-3 text-xs text-muted-foreground">
         <div className="mx-auto max-w-6xl text-center">
-          Hey Search
+          HeySearch
           {versionInfo && (
             <span className="ml-1.5 opacity-60">
               {versionInfo.local === "true"

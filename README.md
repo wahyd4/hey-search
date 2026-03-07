@@ -1,4 +1,4 @@
-# Hey Search
+# HeySearch
 
 A privacy-respecting [metasearch engine](https://en.wikipedia.org/wiki/Metasearch_engine) that aggregates results from multiple search engines.
 

@@ -1,4 +1,4 @@
-"""API routes for Hey Search."""
+"""API routes for HeySearch."""
 
 from __future__ import annotations
 
