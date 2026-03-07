@@ -53,19 +53,28 @@ just dev
 REDIS_URL=redis://192.168.1.2:6399 just dev
 ```
 
-### 2. Docker
+### 2. Docker Compose
+
+The easiest way to run HeySearch with Redis caching in one command:
 
 ```bash
+docker compose up -d
+```
 
+Then open [http://localhost:8000](http://localhost:8000). Data and Redis are persisted in named volumes automatically.
+
+### 3. Docker (standalone)
+
+```bash
 # Basic — data stored in anonymous volume
-docker run -p 8000:8000  ghcr.io/wahyd4/hey-search
+docker run -p 8000:8000 ghcr.io/wahyd4/hey-search
 
 # Recommended — mount data directory for persistence
-docker run -p 8000:8000 -v ./hey-search-data:/app/data hey-search
+docker run -p 8000:8000 -v ./hey-search-data:/app/data ghcr.io/wahyd4/hey-search
 
 # With Redis
 docker run -p 8000:8000 -v ./hey-search-data:/app/data \
-  -e REDIS_URL=redis://your-redis:6379 hey-search
+  -e REDIS_URL=redis://your-redis:6379 ghcr.io/wahyd4/hey-search
 ```
 
 The `/app/data` volume stores the SQLite database (engine settings, excluded domains, cache config). Mount it to preserve your settings across container restarts.
