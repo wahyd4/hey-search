@@ -17,8 +17,6 @@ interface AppHeaderProps {
   children?: React.ReactNode;
 }
 
-// Items ordered left→right. Rightmost item (Settings) gets the shortest delay,
-// so it appears first creating the right-to-left unfold effect.
 const NAV_ITEMS = [
   { id: "docs",      icon: ExternalLink, label: "API Docs",    href: "/docs" },
   { id: "stats",     icon: BarChart2,    label: "Stats",       href: null },
@@ -27,8 +25,6 @@ const NAV_ITEMS = [
   { id: "bookmarks", icon: BookmarkIcon, label: "Bookmarks",   href: null },
   { id: "settings",  icon: Settings,     label: "Settings",    href: null },
 ] as const;
-
-const STAGGER_MS = 60;
 
 export function AppHeader({
   onGoHome,
@@ -47,11 +43,11 @@ export function AppHeader({
   const close = () => setMenuOpen(false);
 
   const actions: Record<string, () => void> = {
-    settings:  () => { onShowSettings();           close(); },
-    bookmarks: () => { onShowBookmarks();           close(); },
-    gallery:   () => { onShowGallery();             close(); },
-    stats:     () => { onShowStats();               close(); },
-    history:   () => { onShowHistory?.();           close(); },
+    settings:  () => { onShowSettings();  close(); },
+    bookmarks: () => { onShowBookmarks(); close(); },
+    gallery:   () => { onShowGallery();   close(); },
+    stats:     () => { onShowStats();     close(); },
+    history:   () => { onShowHistory?.(); close(); },
     docs:      close,
   };
 
@@ -84,12 +80,10 @@ export function AppHeader({
       : "text-muted-foreground hover:bg-accent"
   );
 
-  const itemBase = cn(
-    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap",
-    "transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-    transparent
-      ? "text-white/80 hover:text-white hover:bg-white/10"
-      : "text-muted-foreground hover:bg-accent"
+  const dropdownItemBase = cn(
+    "flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+    "text-foreground hover:bg-accent"
   );
 
   return (
@@ -117,72 +111,8 @@ export function AppHeader({
           : <div className="flex-1" />
         }
 
-        {/* Right side: animated nav items + toggle button */}
-        <div ref={menuRef} className="flex items-center gap-1 shrink-0">
-          {/* Nav items — animate right→left on open */}
-          {NAV_ITEMS.map((item, i) => {
-            // Rightmost item (Settings, index 3) gets 0ms delay → appears first
-            const delay = menuOpen
-              ? (NAV_ITEMS.length - 1 - i) * STAGGER_MS
-              : 0;
-
-            // Outer wrapper collapses to width 0 when closed so it doesn't
-            // squeeze sibling content (e.g. the search bar on the results page).
-            const wrapperStyle: React.CSSProperties = {
-              maxWidth: menuOpen ? "120px" : "0px",
-              overflow: "hidden",
-              transition: `max-width 180ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
-            };
-
-            const innerStyle: React.CSSProperties = {
-              transitionProperty: "opacity, transform",
-              transitionDuration: "180ms",
-              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-              transitionDelay: `${delay}ms`,
-              opacity: menuOpen ? 1 : 0,
-              transform: menuOpen ? "translateX(0)" : "translateX(16px)",
-              pointerEvents: menuOpen ? "auto" : "none",
-            };
-
-            const Icon = item.icon;
-
-            if (item.href) {
-              return (
-                <div key={item.id} style={wrapperStyle}>
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={item.label}
-                    title={item.label}
-                    className={itemBase}
-                    style={innerStyle}
-                    onClick={close}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </a>
-                </div>
-              );
-            }
-
-            return (
-              <div key={item.id} style={wrapperStyle}>
-                <button
-                  onClick={actions[item.id]}
-                  aria-label={item.label}
-                  title={item.label}
-                  className={itemBase}
-                  style={innerStyle}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </button>
-              </div>
-            );
-          })}
-
-          {/* Toggle button */}
+        {/* Menu toggle */}
+        <div ref={menuRef} className="relative shrink-0">
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -200,6 +130,51 @@ export function AppHeader({
               }
             </span>
           </button>
+
+          {/* Dropdown panel */}
+          <div
+            className={cn(
+              "absolute right-0 top-full mt-2 w-52 rounded-xl border shadow-lg",
+              "bg-background/95 backdrop-blur",
+              "overflow-hidden transition-all duration-200 origin-top-right",
+              menuOpen
+                ? "opacity-100 scale-100 pointer-events-auto"
+                : "opacity-0 scale-95 pointer-events-none"
+            )}
+            role="menu"
+            aria-label="Navigation menu"
+          >
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              if (item.href) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    role="menuitem"
+                    className={dropdownItemBase}
+                    onClick={close}
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    {item.label}
+                  </a>
+                );
+              }
+              return (
+                <button
+                  key={item.id}
+                  role="menuitem"
+                  onClick={actions[item.id]}
+                  className={dropdownItemBase}
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </header>
