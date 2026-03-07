@@ -98,6 +98,32 @@ The `/app/data` volume stores the SQLite database (engine settings, excluded dom
 | `image_size` | —        | `large`, `medium`, or `small` (images only)          |
 | `sort`       | `default`| `default`, `date_asc`, or `date_desc`                |
 
+## Using with AI Agents / curl
+
+The `/api/search` endpoint returns clean JSON — ideal for LLMs and AI agents to consume directly.
+
+```bash
+# Web search
+curl "http://localhost:8000/api/search?q=python+async&format=json" | jq
+
+# Restrict to specific engines
+curl "http://localhost:8000/api/search?q=rust+programming&engines=brave,google" | jq
+
+# Image search
+curl "http://localhost:8000/api/search?q=mountain+landscape&category=images&image_size=large" | jq
+
+# Paginate results
+curl "http://localhost:8000/api/search?q=machine+learning&page=2" | jq
+
+# Extract just titles and URLs from web results
+curl "http://localhost:8000/api/search?q=openai" | \
+  jq '[.results[] | {title, url, snippet}]'
+```
+
+
+
+> Interactive API docs (Swagger UI) are available at `http://localhost:8000/docs`.
+
 ## Features
 
 See [FEATURES.md](FEATURES.md) for the full feature list.
