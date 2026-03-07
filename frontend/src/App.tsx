@@ -389,7 +389,13 @@ function App() {
   // Stats page
   if (showStats) {
     return <>
-      <StatsPage onGoHome={handleGoHome} />
+      <StatsPage
+        onGoHome={handleGoHome}
+        onShowSettings={() => setShowSettings(true)}
+        onShowBookmarks={handleShowBookmarks}
+        onShowGallery={handleShowGallery}
+        onShowHistory={handleShowHistory}
+      />
       {settingsModal}
     </>;
   }

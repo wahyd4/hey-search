@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { fetchStats, type StatsSummary } from "@/lib/api";
 import { BarChart2, TrendingUp, MousePointerClick, Search } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 
 interface StatsPageProps {
   onGoHome: () => void;
+  onShowSettings: () => void;
+  onShowBookmarks: () => void;
+  onShowGallery: () => void;
+  onShowHistory?: () => void;
 }
 
 function Card({ title, value, sub }: { title: string; value: string | number; sub?: string }) {
@@ -16,7 +21,7 @@ function Card({ title, value, sub }: { title: string; value: string | number; su
   );
 }
 
-export function StatsPage({ onGoHome }: StatsPageProps) {
+export function StatsPage({ onGoHome, onShowSettings, onShowBookmarks, onShowGallery, onShowHistory }: StatsPageProps) {
   const [days, setDays] = useState(7);
   const [data, setData] = useState<StatsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,20 +38,20 @@ export function StatsPage({ onGoHome }: StatsPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button
-            onClick={onGoHome}
-            className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded"
-          >
-            HS
-          </button>
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <BarChart2 className="h-4 w-4" />
+      <AppHeader
+        onGoHome={onGoHome}
+        onShowSettings={onShowSettings}
+        onShowBookmarks={onShowBookmarks}
+        onShowGallery={onShowGallery}
+        onShowStats={() => {}}
+        onShowHistory={onShowHistory}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <h1 className="flex items-center gap-2 text-sm font-semibold whitespace-nowrap">
+            <BarChart2 className="h-4 w-4 shrink-0" />
             Search Analytics
-          </div>
-          <div className="ml-auto flex items-center gap-1">
+          </h1>
+          <div className="flex items-center gap-1">
             {[7, 30, 90].map((d) => (
               <button
                 key={d}
@@ -60,7 +65,7 @@ export function StatsPage({ onGoHome }: StatsPageProps) {
             ))}
           </div>
         </div>
-      </header>
+      </AppHeader>
 
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
         {loading && <p className="text-center text-muted-foreground py-16">Loading…</p>}
