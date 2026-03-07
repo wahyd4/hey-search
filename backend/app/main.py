@@ -1,4 +1,4 @@
-"""Hey Search - A metasearch engine."""
+"""HeySearch - A metasearch engine."""
 
 import json
 import os
@@ -34,7 +34,7 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(
-    title="Hey Search",
+    title="HeySearch",
     description="A privacy-respecting metasearch engine. See endpoints below for usage with curl examples.",
     version="1.4.0",
     lifespan=lifespan,

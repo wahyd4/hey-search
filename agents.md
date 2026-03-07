@@ -1,10 +1,10 @@
 # Agents
 
-This file describes the project structure and conventions for AI coding agents working on Hey Search.
+This file describes the project structure and conventions for AI coding agents working on HeySearch.
 
 ## Project Overview
 
-Hey Search is a privacy-respecting metasearch engine that aggregates results from multiple upstream search engines (Brave, DuckDuckGo, Google, Bing). It has a Python/FastAPI backend and a React/TypeScript frontend.
+HeySearch is a privacy-respecting metasearch engine that aggregates results from multiple upstream search engines (Brave, DuckDuckGo, Google, Bing). It has a Python/FastAPI backend and a React/TypeScript frontend.
 
 ## Repository Structure
 

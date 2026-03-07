@@ -1,10 +1,32 @@
-# Hey Search
+# HeySearch
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 A privacy-respecting [metasearch engine](https://en.wikipedia.org/wiki/Metasearch_engine) that aggregates results from multiple search engines.
 
-Inspired by [SearXNG](https://github.com/searxng/searxng).
+> Inspired by [SearXNG](https://github.com/searxng/searxng), built for the modern web.
+
+## Screenshots
+
+| Home | Web Search | Image Search |
+|------|-----------|--------------|
+| [![Home page](screenshots/home-page.png)](screenshots/home-page.png) | [![Web search results](screenshots/text-search.png)](screenshots/text-search.png) | [![Image search with lightbox](screenshots/image-search.png)](screenshots/image-search.png) |
+
+## Why HeySearch over SearXNG?
+
+Both are open-source, self-hosted, privacy-respecting metasearch engines. Here's why HeySearch is the better choice for most people:
+
+| | HeySearch | SearXNG |
+|---|---|---|
+| **Setup** | `docker run -p 8000:8000 ghcr.io/…/hey-search` — one command, zero config | Requires YAML config, engine tuning, often breaks out of the box |
+| **UI** | Modern, clean React UI with dark mode, background images, image lightbox | Functional but dated — not optimised for mobile or daily use |
+| **AI agent friendly** | Clean JSON REST API, OpenAPI docs at `/docs`, designed to be queried programmatically | API exists but less documented; HTML-heavy responses |
+| **Bookmarks** | Built-in bookmark manager for results | ❌ |
+| **Search history** | Full search history with timestamps, re-run any past query in one click | ❌ |
+| **Usage stats** | Built-in analytics dashboard — top queries, click-through rates, engine usage | ❌ |
+| **Background gallery** | Beautiful Unsplash/Picsum backgrounds on the home page | ❌ |
+
+**TL;DR** — If you want something you can run in 30 seconds, looks great, works well on your phone, and exposes a clean API for your AI tools, HeySearch is for you. If you need 70+ search engines and deep customisation, SearXNG has the edge.
 
 ## Architecture
 
@@ -21,36 +43,7 @@ Inspired by [SearXNG](https://github.com/searxng/searxng).
 
 ## Running Locally
 
-### 1. Backend
-
-```bash
-cd backend
-uv sync                # install dependencies
-uv run uvicorn app.main:app --reload --port 8000
-```
-
-To enable Redis caching:
-
-```bash
-REDIS_URL=redis://192.168.1.2:6399 uv run uvicorn app.main:app --reload --port 8000
-```
-
-The API will be available at `http://localhost:8000`. Interactive docs:
-
-- Swagger UI: http://localhost:8000/docs
-- Redoc: http://localhost:8000/redoc
-
-### 2. Frontend
-
-```bash
-cd frontend
-npm install            # install dependencies
-npm run dev            # start dev server with hot reload
-```
-
-The frontend dev server runs at `http://localhost:5173` and proxies `/api` requests to the backend.
-
-### 3. Quick start (both)
+### 1. Quick start
 
 ```bash
 # Without Redis (caching disabled)
@@ -60,7 +53,7 @@ just dev
 REDIS_URL=redis://192.168.1.2:6399 just dev
 ```
 
-### 4. Docker (production)
+### 2. Docker (production)
 
 ```bash
 docker build -t hey-search .

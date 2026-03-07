@@ -11,7 +11,7 @@ from urllib.parse import urlencode, urlparse, parse_qs, unquote
 from lxml import html as lxml_html
 
 from app.models import WebResult, ImageResult
-from app.engines.base import SearchEngine, get_http_client
+from app.engines.base import SearchEngine, get_http_client, is_image_file_url
 from app.engines.date_utils import parse_date_from_text
 
 logger = logging.getLogger(__name__)
@@ -217,7 +217,7 @@ class BingEngine(SearchEngine):
                     results.append(
                         ImageResult(
                             title=title,
-                            url=source_url or img_url,
+                            url=source_url or (img_url if not is_image_file_url(img_url) else ""),
                             img_src=img_url,
                             thumbnail_src=thumb_url or img_url,
                             source="Bing",

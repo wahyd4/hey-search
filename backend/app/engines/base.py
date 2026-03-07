@@ -37,6 +37,18 @@ def get_http_client() -> httpx.AsyncClient:
     return _client
 
 
+_IMAGE_EXTENSIONS = frozenset({
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg",
+    ".tiff", ".tif", ".avif", ".heic", ".ico",
+})
+
+
+def is_image_file_url(url: str) -> bool:
+    """Return True if the URL points directly to an image file (not a web page)."""
+    path = url.split("?")[0].split("#")[0].lower()
+    return any(path.endswith(ext) for ext in _IMAGE_EXTENSIONS)
+
+
 class SearchEngine(abc.ABC):
     """Abstract search engine interface."""
 

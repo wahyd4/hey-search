@@ -1,4 +1,4 @@
-# Hey Search — development commands
+# HeySearch — development commands
 
 set dotenv-load := false
 

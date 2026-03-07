@@ -123,7 +123,7 @@
 
 ### Added
 
-- Initial release of Hey Search metasearch engine
+- Initial release of HeySearch metasearch engine
 - **Backend** (Python / FastAPI)
   - Async search orchestrator querying Brave, DuckDuckGo, Google, and Bing concurrently
   - Retry mechanism with exponential backoff for upstream engine failures

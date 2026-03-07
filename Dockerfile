@@ -27,6 +27,12 @@ COPY --from=frontend-build /app/frontend/dist /app/static
 # Persistent data directory for SQLite DB and configuration
 ENV DATA_DIR=/app/data
 ENV REDIS_URL=""
+
+# Version injected at build time via --build-arg
+ARG APP_VERSION=dev
+ARG APP_COMMIT=unknown
+ENV APP_VERSION=${APP_VERSION}
+ENV APP_COMMIT=${APP_COMMIT}
 VOLUME ["/app/data"]
 
 EXPOSE 8000

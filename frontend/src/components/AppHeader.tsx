@@ -103,9 +103,11 @@ export function AppHeader({
           <button
             onClick={onGoHome}
             aria-label="Go to homepage"
-            className="shrink-0 text-xl font-bold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+            className="shrink-0 text-xl font-bold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded"
+            style={{ color: "#27ae60" }}
           >
-            HS
+            <span className="sm:hidden">HS</span>
+            <span className="hidden sm:inline">HeySearch</span>
           </button>
         )}
 
