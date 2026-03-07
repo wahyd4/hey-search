@@ -18,8 +18,8 @@ Both are open-source, self-hosted, privacy-respecting metasearch engines. Here's
 
 | | HeySearch | SearXNG |
 |---|---|---|
-| **Setup** | `docker run -p 8000:8000 ghcr.io/…/hey-search` — one command, zero config | Requires YAML config, engine tuning, often breaks out of the box |
-| **UI** | Modern, clean React UI with dark mode, background images, image lightbox | Functional but dated — not optimised for mobile or daily use |
+| **Setup** | `docker compose up -d` — one command, zero config | Requires YAML config, engine tuning, sometimes breaks |
+| **UI** | Modern, clean React UI with dark mode, background images, image lightbox | Functional but dated — not mobile friendly |
 | **AI agent friendly** | Clean JSON REST API, OpenAPI docs at `/docs`, designed to be queried programmatically | API exists but less documented; HTML-heavy responses |
 | **Bookmarks** | Built-in bookmark manager for results | ❌ |
 | **Search history** | Full search history with timestamps, re-run any past query in one click | ❌ |
