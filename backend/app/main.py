@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.mcp_server import router as mcp_router
 from app.engines import registry
 from app.excluded import init_db
 from app.settings import init_settings_table, set_setting
@@ -131,6 +132,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(router, prefix="/api")
+app.include_router(mcp_router, prefix="/api")
 
 # Alias /search → /api/search for compatibility with external clients
 @app.api_route("/search", methods=["GET", "POST"], include_in_schema=False)

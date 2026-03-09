@@ -20,7 +20,7 @@ Both are open-source, self-hosted, privacy-respecting metasearch engines. Here's
 |---|---|---|
 | **Setup** | `docker compose up -d` — one command, zero config | Requires YAML config, engine tuning, sometimes breaks |
 | **UI** | Modern, clean React UI with dark mode, background images, image lightbox | Functional but dated — not mobile friendly |
-| **AI agent friendly** | Clean JSON REST API, OpenAPI docs at `/docs`, designed to be queried programmatically | API exists but less documented; HTML-heavy responses |
+| **AI agent friendly** | MCP tool server at `/api/mcp` (Claude Desktop, Cursor, Continue), `format=llm` for minimal responses, clean JSON REST API, OpenAPI docs at `/docs` | API exists but less documented; HTML-heavy responses |
 | **Bookmarks** | Built-in bookmark manager for results | ❌ |
 | **Search history** | Full search history with timestamps, re-run any past query in one click | ❌ |
 | **Usage stats** | Built-in analytics dashboard — top queries, click-through rates, engine usage | ❌ |
@@ -90,6 +90,7 @@ The `/app/data` volume stores the SQLite database (engine settings, excluded dom
 | GET        | `/api/settings`             | Get app settings (cache TTL)|
 | PUT        | `/api/settings`             | Update settings             |
 | DELETE     | `/api/cache`                | Flush search cache          |
+| POST       | `/api/mcp`                  | MCP tool server (for LLMs)  |
 
 ### Search endpoint parameters
 
@@ -99,37 +100,84 @@ The `/app/data` volume stores the SQLite database (engine settings, excluded dom
 | `category`   | `web`    | `web` or `images`                                    |
 | `page`       | `1`      | Page number (1–50)                                   |
 | `pageNumber` | —        | Alias for `page` (takes precedence when provided)    |
-| `numResults` | —        | Requested result count hint (informational)          |
-| `format`     | —        | Response format hint (e.g. `json`)                   |
+| `max_results`| —        | Hard limit on results returned (1–100)               |
+| `numResults` | —        | Alias for `max_results`                              |
+| `format`     | —        | `llm` for minimal LLM-friendly response (see below)  |
 | `imageProxy` | —        | Client image-proxy preference flag (informational)   |
 | `safesearch` | —        | Safe search level: `0` off, `1` moderate, `2` strict |
 | `engines`    | —        | Comma-separated engine names to restrict (e.g. `google,bing`) |
 | `image_size` | —        | `large`, `medium`, or `small` (images only)          |
 | `sort`       | `default`| `default`, `date_asc`, or `date_desc`                |
+| `date_filter`| —        | `day`, `week`, `month`, or `year`                    |
 
-## Using with AI Agents / curl
+## Using with AI Agents / LLMs
 
-The `/api/search` endpoint returns clean JSON — ideal for LLMs and AI agents to consume directly.
+HeySearch is designed to be used by LLMs and AI agents. There are two integration methods:
 
-```bash
-# Web search
-curl "http://localhost:8000/api/search?q=python+async&format=json" | jq
+### 1. MCP Tool Server (recommended)
 
-# Restrict to specific engines
-curl "http://localhost:8000/api/search?q=rust+programming&engines=brave,google" | jq
+[Model Context Protocol](https://modelcontextprotocol.io/) (MCP) is the standard for LLM tool use. Add HeySearch to any MCP-compatible client:
 
-# Image search
-curl "http://localhost:8000/api/search?q=mountain+landscape&category=images&image_size=large" | jq
-
-# Paginate results
-curl "http://localhost:8000/api/search?q=machine+learning&page=2" | jq
-
-# Extract just titles and URLs from web results
-curl "http://localhost:8000/api/search?q=openai" | \
-  jq '[.results[] | {title, url, snippet}]'
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "heysearch": {
+      "url": "http://localhost:8000/api/mcp",
+      "transport": "http"
+    }
+  }
+}
 ```
 
+**Cursor / Continue / VS Code Copilot** — add `http://localhost:8000/api/mcp` as an MCP server URL in the tool settings.
 
+**Manual test:**
+```bash
+# List available tools
+curl -X POST http://localhost:8000/api/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Call the search tool
+curl -X POST http://localhost:8000/api/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search","arguments":{"query":"python async","num_results":3}}}'
+```
+
+**Available MCP tools:** `search`, `autocomplete`
+
+### 2. REST API with `format=llm`
+
+For direct API calls from LLM agents, use `format=llm` to get a minimal, token-efficient response:
+
+```bash
+# LLM-optimised response — only title, url, snippet, date. No engine noise.
+curl "http://localhost:8000/api/search?q=python+async&format=llm&max_results=5" | jq
+```
+
+Response shape:
+```json
+{
+  "query": "python async",
+  "category": "web",
+  "results": [
+    { "title": "...", "url": "https://...", "snippet": "...", "date": "2024-01-15" }
+  ],
+  "total_results": 5
+}
+```
+
+```bash
+# Restrict to specific engines
+curl "http://localhost:8000/api/search?q=rust+programming&engines=brave,google&format=llm" | jq
+
+# Image search with size filter
+curl "http://localhost:8000/api/search?q=mountain+landscape&category=images&image_size=large" | jq
+
+# Limit results (hard limit, not a hint)
+curl "http://localhost:8000/api/search?q=openai&max_results=3&format=llm" | jq
+```
 
 > Interactive API docs (Swagger UI) are available at `http://localhost:8000/docs`.
 
