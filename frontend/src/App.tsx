@@ -5,6 +5,7 @@ import { WebResults } from "@/components/WebResults";
 import { ImageResults } from "@/components/ImageResults";
 import { SearchStats } from "@/components/SearchStats";
 import { SettingsModal } from "@/components/SettingsModal";
+import { FilterSheet } from "@/components/FilterSheet";
 import { ErrorToast } from "@/components/ErrorToast";
 import { BackgroundGallery } from "@/components/BackgroundGallery";
 import { Bookmarks } from "@/components/Bookmarks";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 type Category = "web" | "images";
 type ImageSize = "" | "large" | "medium" | "small";
 type SortOrder = "default" | "date_desc" | "date_asc";
+type DateFilter = "" | "day" | "week" | "month" | "year";
 
 const IMAGE_SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
   { value: "", label: "All sizes" },
@@ -31,7 +33,15 @@ const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
   { value: "date_asc", label: "Oldest" },
 ];
 
-function parseUrlState(): { q: string; cat: Category; page: number; imageSize: ImageSize; engines: string; sort: SortOrder } {
+const DATE_FILTER_OPTIONS: { value: DateFilter; label: string }[] = [
+  { value: "", label: "Any time" },
+  { value: "day", label: "Past day" },
+  { value: "week", label: "Past week" },
+  { value: "month", label: "Past month" },
+  { value: "year", label: "Past year" },
+];
+
+function parseUrlState(): { q: string; cat: Category; page: number; imageSize: ImageSize; engines: string; sort: SortOrder; dateFilter: DateFilter } {
   const params = new URLSearchParams(window.location.search);
   const q = params.get("q") ?? "";
   const cat = params.get("category") === "images" ? "images" : "web";
@@ -41,10 +51,12 @@ function parseUrlState(): { q: string; cat: Category; page: number; imageSize: I
   const engines = params.get("engines") ?? "";
   const rawSort = params.get("sort") ?? "";
   const sort: SortOrder = (["date_desc", "date_asc"].includes(rawSort) ? rawSort : "default") as SortOrder;
-  return { q, cat, page, imageSize, engines, sort };
+  const rawDateFilter = params.get("date_filter") ?? "";
+  const dateFilter: DateFilter = (["day", "week", "month", "year"].includes(rawDateFilter) ? rawDateFilter : "") as DateFilter;
+  return { q, cat, page, imageSize, engines, sort, dateFilter };
 }
 
-function pushUrl(q: string, cat: Category, page: number, imageSize: ImageSize = "", engines: string = "", sort: SortOrder = "default") {
+function pushUrl(q: string, cat: Category, page: number, imageSize: ImageSize = "", engines: string = "", sort: SortOrder = "default", dateFilter: DateFilter = "") {
   const params = new URLSearchParams();
   params.set("q", q);
   if (cat !== "web") params.set("category", cat);
@@ -52,6 +64,7 @@ function pushUrl(q: string, cat: Category, page: number, imageSize: ImageSize = 
   if (imageSize) params.set("image_size", imageSize);
   if (engines) params.set("engines", engines);
   if (sort !== "default") params.set("sort", sort);
+  if (dateFilter) params.set("date_filter", dateFilter);
   const url = `/?${params.toString()}`;
   if (window.location.pathname + window.location.search !== url) {
     window.history.pushState(null, "", url);
@@ -65,9 +78,11 @@ function App() {
   const [page, setPage] = useState(initial.page);
   const [imageSize, setImageSize] = useState<ImageSize>(initial.imageSize);
   const [sortOrder, setSortOrder] = useState<SortOrder>(initial.sort);
+  const [dateFilter, setDateFilter] = useState<DateFilter>(initial.dateFilter);
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [hasSearched, setHasSearched] = useState(!!initial.q);
   const [showGallery, setShowGallery] = useState(window.location.pathname === "/backgrounds");
   const [showBookmarks, setShowBookmarks] = useState(window.location.pathname === "/bookmarks");
@@ -172,7 +187,7 @@ function App() {
 
 
   const doSearch = useCallback(
-    async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true, sort: SortOrder = sortOrder) => {
+    async (q: string, cat: Category = category, p: number = 1, size: ImageSize = imageSize, updateUrl = true, sort: SortOrder = sortOrder, df: DateFilter = dateFilter) => {
       if (!q.trim()) return;
       setQuery(q);
       setCategory(cat);
@@ -180,9 +195,9 @@ function App() {
       setImageSize(size);
       setLoading(true);
       setHasSearched(true);
-      if (updateUrl) pushUrl(q, cat, p, cat === "images" ? size : "", "", sort);
+      if (updateUrl) pushUrl(q, cat, p, cat === "images" ? size : "", "", sort, df);
       try {
-        const res = await apiSearch(q, cat, p, cat === "images" ? size : "", sort);
+        const res = await apiSearch(q, cat, p, cat === "images" ? size : "", sort, df);
         setResponse(res);
       } catch (err) {
         setResponse({
@@ -202,13 +217,13 @@ function App() {
         setLoading(false);
       }
     },
-    [category, imageSize, sortOrder]
+    [category, imageSize, sortOrder, dateFilter]
   );
 
   // Restore search from URL on initial load
   useEffect(() => {
     if (initial.q) {
-      doSearch(initial.q, initial.cat, initial.page, initial.imageSize, false, initial.sort);
+      doSearch(initial.q, initial.cat, initial.page, initial.imageSize, false, initial.sort, initial.dateFilter);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -236,10 +251,11 @@ function App() {
       setShowBookmarks(false);
       setShowStats(false);
       setShowHistory(false);
-      const { q, cat, page: p, imageSize: size, sort } = parseUrlState();
+      const { q, cat, page: p, imageSize: size, sort, dateFilter: df } = parseUrlState();
       if (q) {
         setSortOrder(sort);
-        doSearch(q, cat, p, size, false, sort);
+        setDateFilter(df);
+        doSearch(q, cat, p, size, false, sort, df);
       } else {
         setHasSearched(false);
         setResponse(null);
@@ -255,23 +271,28 @@ function App() {
 
   const handleCategoryChange = (cat: Category) => {
     setCategory(cat);
-    if (query) doSearch(query, cat, 1, cat === "images" ? imageSize : "", true, sortOrder);
+    if (query) doSearch(query, cat, 1, cat === "images" ? imageSize : "", true, sortOrder, dateFilter);
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
-    doSearch(query, category, newPage, imageSize);
+    doSearch(query, category, newPage, imageSize, true, sortOrder, dateFilter);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleImageSizeChange = (size: ImageSize) => {
     setImageSize(size);
-    if (query) doSearch(query, category, 1, size, true, sortOrder);
+    if (query) doSearch(query, category, 1, size, true, sortOrder, dateFilter);
   };
 
   const handleSortChange = (sort: SortOrder) => {
     setSortOrder(sort);
-    if (query) doSearch(query, category, page, imageSize, true, sort);
+    if (query) doSearch(query, category, page, imageSize, true, sort, dateFilter);
+  };
+
+  const handleDateFilterChange = (df: DateFilter) => {
+    setDateFilter(df);
+    if (query) doSearch(query, category, 1, imageSize, true, sortOrder, df);
   };
 
   const handleGoHome = () => {
@@ -279,6 +300,7 @@ function App() {
     setResponse(null);
     setPage(1);
     setImageSize("");
+    setDateFilter("");
     setShowGallery(false);
     setShowBookmarks(false);
     setShowStats(false);
@@ -368,6 +390,21 @@ function App() {
   // SettingsModal is always rendered here so it works on every page
   const settingsModal = (
     <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+  );
+
+  const filterSheet = (
+    <FilterSheet
+      open={showFilterSheet}
+      onClose={() => setShowFilterSheet(false)}
+      category={category}
+      imageSize={imageSize}
+      sortOrder={sortOrder}
+      dateFilter={dateFilter}
+      onCategoryChange={(v) => { handleCategoryChange(v); setShowFilterSheet(false); }}
+      onImageSizeChange={(v) => { handleImageSizeChange(v); setShowFilterSheet(false); }}
+      onSortChange={(v) => { handleSortChange(v); setShowFilterSheet(false); }}
+      onDateFilterChange={(v) => { handleDateFilterChange(v); setShowFilterSheet(false); }}
+    />
   );
 
   // Gallery page
@@ -584,18 +621,47 @@ function App() {
             </button>
           ))}
 
-          {/* Image size filter — only visible in images category */}
+          {/* Mobile: Filters button with active-count badge — hidden on sm+ */}
+          {(() => {
+            const activeCount = [
+              category === "images" && imageSize !== "",
+              sortOrder !== "default",
+              dateFilter !== "",
+            ].filter(Boolean).length;
+            return (
+              <button
+                onClick={() => setShowFilterSheet(true)}
+                aria-label={`Filters${activeCount > 0 ? `, ${activeCount} active` : ""}`}
+                className={cn(
+                  "sm:hidden shrink-0 ml-1 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  activeCount > 0
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-accent"
+                )}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+                Filters
+                {activeCount > 0 && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })()}
+
+          {/* Image size filter — only visible in images category, desktop only */}
           {category === "images" && (
             <>
-              <div className="mx-2 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <div className="mx-2 h-5 w-px shrink-0 bg-border hidden sm:block" aria-hidden="true" />
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground hidden sm:block" aria-hidden="true" />
               {IMAGE_SIZE_OPTIONS.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => handleImageSizeChange(value)}
                   aria-pressed={imageSize === value}
                   className={cn(
-                    "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    "hidden sm:block shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                     imageSize === value
                       ? "bg-secondary text-secondary-foreground"
                       : "text-muted-foreground hover:bg-accent"
@@ -607,18 +673,39 @@ function App() {
             </>
           )}
 
-          {/* Sort order — available for both web and images */}
+          {/* Sort order — desktop only */}
           <>
-            <div className="mx-2 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
-            <span className="shrink-0 text-xs text-muted-foreground" aria-hidden="true">Sort:</span>
+            <div className="mx-2 h-5 w-px shrink-0 bg-border hidden sm:block" aria-hidden="true" />
+            <span className="shrink-0 text-xs text-muted-foreground hidden sm:block" aria-hidden="true">Sort:</span>
             {SORT_OPTIONS.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => handleSortChange(value)}
                 aria-pressed={sortOrder === value}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "hidden sm:block shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                   sortOrder === value
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-accent"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </>
+
+          {/* Date filter — desktop only */}
+          <>
+            <div className="mx-2 h-5 w-px shrink-0 bg-border hidden sm:block" aria-hidden="true" />
+            <span className="shrink-0 text-xs text-muted-foreground hidden sm:block" aria-hidden="true">Date:</span>
+            {DATE_FILTER_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => handleDateFilterChange(value)}
+                aria-pressed={dateFilter === value}
+                className={cn(
+                  "hidden sm:block shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  dateFilter === value
                     ? "bg-secondary text-secondary-foreground"
                     : "text-muted-foreground hover:bg-accent"
                 )}
@@ -731,6 +818,9 @@ function App() {
 
       {/* Settings modal */}
       {settingsModal}
+
+      {/* Mobile filter sheet */}
+      {filterSheet}
     </div>
   );
 }

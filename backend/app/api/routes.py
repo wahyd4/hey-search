@@ -82,10 +82,11 @@ async def api_search(
     engines: str | None = Query(None, description="Comma-separated engine names to use (e.g. 'google,bing')"),
     image_size: Literal["", "large", "medium", "small"] = Query("", description="Filter images by size (images category only)"),
     sort: Literal["default", "date_asc", "date_desc"] = Query("default", description="Sort results by publish date"),
+    date_filter: Literal["", "day", "week", "month", "year"] = Query("", description="Filter results by publish date recency (day=24h, week=7d, month=30d, year=365d)"),
 ):
     effective_page = pageNumber if pageNumber is not None else page
     engine_list = [e.strip() for e in engines.split(",")] if engines else None
-    result = await search(q, category=category, page=effective_page, engines=engine_list, image_size=image_size, sort=sort)
+    result = await search(q, category=category, page=effective_page, engines=engine_list, image_size=image_size, sort=sort, date_filter=date_filter)
     origin_ip = request.client.host if request.client else ""
     user_agent = request.headers.get("user-agent", "")
     _stats.record_search(

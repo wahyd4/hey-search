@@ -74,11 +74,13 @@ export async function search(
   category: "web" | "images" = "web",
   page: number = 1,
   imageSize: string = "",
-  sort: string = "default"
+  sort: string = "default",
+  dateFilter: string = ""
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ q: query, category, page: String(page) });
   if (imageSize) params.set("image_size", imageSize);
   if (sort !== "default") params.set("sort", sort);
+  if (dateFilter) params.set("date_filter", dateFilter);
   const resp = await fetch(`${API_BASE}/search?${params}`);
   if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
   return resp.json();
