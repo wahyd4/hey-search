@@ -86,11 +86,22 @@
 
 - Full REST API for search, autocomplete, engine management, bookmarks, history, stats, and settings
 - `/api/search` accepts both **GET and POST** requests with query string parameters
+- **`format=llm`** — minimal LLM-optimised response: only `query`, `results` (title, url, snippet, date), and `total_results`; no engine noise
+- **`max_results`** — hard limit on returned results (1–100); `numResults` is a supported alias
 - Compatibility parameters: `pageNumber` (alias for `page`), `numResults`, `format`, `imageProxy`, `safesearch`
 - Every result includes `result_id`, `rank`, `engine`, and `published_date`
 - `has_next` and `total_results` fields for cursor-aware pagination
 - `X-Response-Time-Ms` response header on all endpoints
 - OpenAPI specification with interactive docs via [Swagger UI](https://swagger.io/tools/swagger-ui/) (`/docs`) and [Redoc](https://github.com/Redocly/redoc) (`/redoc`)
+
+## MCP Tool Server
+
+- **`/api/mcp`** — [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) endpoint; exposes HeySearch as a native tool for LLMs
+- Compatible with Claude Desktop, Cursor, Continue, VS Code Copilot, and any MCP-capable client
+- **Transport**: Streamable HTTP (JSON-RPC 2.0 POST)
+- **Available tools**: `search` (web + image search) and `autocomplete`
+- `search` tool supports `query`, `category`, `num_results` (1–20), `engines`, `sort`, and `date_filter` arguments
+- Add to Claude Desktop by pointing `url` at `http://your-host/api/mcp` with `"transport": "http"`
 
 ## Reliability
 

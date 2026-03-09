@@ -112,6 +112,7 @@ async def search(
     image_size: str = "",
     sort: SortOrder = "default",
     date_filter: DateFilter = "",
+    max_results: int | None = None,
 ) -> SearchResponse:
     """Search across all enabled engines concurrently, with optional Redis caching."""
     engines_key = ",".join(sorted(engines)) if engines else ""
@@ -124,6 +125,8 @@ async def search(
             resp = SearchResponse(**cached_data)
             resp.cached = True
             _apply_sort(resp.results, sort)
+            if max_results is not None:
+                resp.results = resp.results[:max_results]
             resp.total_results = len(resp.results)
             return resp
 
@@ -202,6 +205,8 @@ async def search(
     # Apply date filter, then sort
     _apply_date_filter(response.results, date_filter)
     _apply_sort(response.results, sort)
+    if max_results is not None:
+        response.results = response.results[:max_results]
     response.total_results = len(response.results)
 
     return response

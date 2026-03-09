@@ -84,3 +84,33 @@ class APIError(BaseModel):
     message: str
     details: str = ""
     retry_hint: str = ""
+
+
+# --- LLM-optimised response models ---
+
+class LLMWebResult(BaseModel):
+    """A single web result stripped to the fields LLMs need."""
+    title: str
+    url: str
+    snippet: str = ""
+    date: str = ""
+
+
+class LLMImageResult(BaseModel):
+    """A single image result stripped to the fields LLMs need."""
+    title: str
+    url: str
+    img_src: str
+    date: str = ""
+
+
+class LLMSearchResponse(BaseModel):
+    """Minimal search response for LLM / AI-agent consumption.
+
+    Contains only the fields needed for RAG and tool-calling workflows.
+    Omits engine metadata, error details, and other browser-UI noise.
+    """
+    query: str
+    category: str = "web"
+    results: list[LLMWebResult | LLMImageResult] = Field(default_factory=list)
+    total_results: int = 0

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.models import SearchResponse, EngineInfo, APIError
+from app.models import SearchResponse, EngineInfo, APIError, LLMWebResult, LLMImageResult, LLMSearchResponse
 from app.search import search, get_autocomplete
 from app.engines import registry
 from app.excluded import get_excluded_domains, add_excluded_domain, remove_excluded_domain
@@ -34,6 +34,12 @@ Supports both GET and POST methods with query parameters.
 ```bash
 curl '$BASE_URL/api/search?q=hello+world&category=web&page=1'
 ```
+
+**LLM / AI-agent optimised response (`format=llm`):**
+```bash
+curl '$BASE_URL/api/search?q=hello+world&format=llm&max_results=5'
+```
+Returns a minimal JSON response with only `query`, `results` (title, url, snippet, date), and `total_results` — ideal for RAG pipelines and tool-calling.
 
 **Example response (truncated):**
 ```json
@@ -75,8 +81,9 @@ async def api_search(
     category: Literal["web", "images"] = Query("web", description="Search category"),
     page: int = Query(1, ge=1, le=50, description="Page number"),
     pageNumber: int | None = Query(None, ge=1, le=50, description="Alias for page (1-based page number)"),
-    numResults: int | None = Query(None, ge=1, le=100, description="Number of results requested (informational)"),
-    format: str | None = Query(None, description="Response format hint (e.g. 'json')"),
+    numResults: int | None = Query(None, ge=1, le=100, description="Number of results to return (applies as hard limit)"),
+    max_results: int | None = Query(None, ge=1, le=100, description="Maximum number of results to return"),
+    format: str | None = Query(None, description="Response format: 'llm' for a minimal LLM-friendly response, omit for full JSON"),
     imageProxy: bool | None = Query(None, description="Whether the client wants image proxying"),
     safesearch: str | None = Query(None, description="Safe search level (0=off, 1=moderate, 2=strict)"),
     engines: str | None = Query(None, description="Comma-separated engine names to use (e.g. 'google,bing')"),
@@ -86,7 +93,9 @@ async def api_search(
 ):
     effective_page = pageNumber if pageNumber is not None else page
     engine_list = [e.strip() for e in engines.split(",")] if engines else None
-    result = await search(q, category=category, page=effective_page, engines=engine_list, image_size=image_size, sort=sort, date_filter=date_filter)
+    # max_results takes precedence; numResults is a supported alias
+    effective_max = max_results if max_results is not None else numResults
+    result = await search(q, category=category, page=effective_page, engines=engine_list, image_size=image_size, sort=sort, date_filter=date_filter, max_results=effective_max)
     origin_ip = request.client.host if request.client else ""
     user_agent = request.headers.get("user-agent", "")
     _stats.record_search(
@@ -97,6 +106,33 @@ async def api_search(
         result_count=result.total_results,
         cached=result.cached,
     )
+
+    if format == "llm":
+        llm_results: list[LLMWebResult | LLMImageResult] = []
+        for r in result.results:
+            if category == "images":
+                llm_results.append(LLMImageResult(
+                    title=r.title,
+                    url=r.url,
+                    img_src=getattr(r, "img_src", ""),
+                    date=r.published_date or "",
+                ))
+            else:
+                llm_results.append(LLMWebResult(
+                    title=r.title,
+                    url=r.url,
+                    snippet=getattr(r, "content", ""),
+                    date=r.published_date or "",
+                ))
+        # Return JSONResponse directly to bypass response_model=SearchResponse
+        # coercion, which would otherwise strip LLM-only fields (snippet, date).
+        return JSONResponse(content=LLMSearchResponse(
+            query=result.query,
+            category=result.category,
+            results=llm_results,
+            total_results=len(llm_results),
+        ).model_dump())
+
     return result
 
 
